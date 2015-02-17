@@ -1,0 +1,12 @@
+/*!
+* @license
+*
+* <%= pkg.name %> <%= pkg.version %>
+* <%= pkg.description %>
+* <%= pkg.homepage %>
+*
+* Copyright 2010-2014, <%= pkg.author || 'Giancarlo F Bellido' %>
+*
+* Date: <%= new Date() %>
+*
+*/

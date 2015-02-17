@@ -1,0 +1,16 @@
+{
+	"unused":true,
+	"eqeqeq":true,
+	"newcap":true,
+	"undef":true,
+	"smarttabs":true,
+	"trailing":true,
+	"maxdepth":3,
+	"freeze": true,
+	"browser": true,
+	"globals": {
+		"module": false, "test": false,
+		"j5g3": false, "compare": false,
+		"basePath": true
+	}
+}

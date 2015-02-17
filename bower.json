@@ -1,0 +1,11 @@
+{
+  "name": "cxl",
+  "version": "0.1.0",
+  "description": "Web Application Framework",
+  "homepage": "http://coaxialsoftware.com",
+
+  "dependencies": {
+    "bootstrap": "*",
+    "backbone": "*"
+  }
+}
