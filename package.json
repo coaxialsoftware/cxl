@@ -1,7 +1,16 @@
 {
-	"name": "cxl",
+	"name": "cxl-server",
 	"author": "Giancarlo Bellido",
 	"version": "1.0.0",
+	"main": "server/cxl-server.js",
+	
+	"dependencies": {
+		"express": "*",
+		"express-session": "*",
+		"colors": "*",
+		"pg":"*",
+		"lodash": "*"
+	},
 	
 	"devDependencies": {
 		"grunt": "*",

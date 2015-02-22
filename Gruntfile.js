@@ -2,16 +2,22 @@ module.exports = function(grunt) {
 
 	grunt.initConfig({
 
-		pkg: grunt.file.readJSON('bower.json'),
+		client: grunt.file.readJSON('bower.json'),
+		server: grunt.file.readJSON('package.json'),
 
 		clean: {
-			dist: [ 'dist' ]
+			client: [ 'client' ]
 		},
 
 		jshint: {
-			dist: {
-				options: { jshintrc: 'src/.jshintrc' },
-				src: 'src/**/*.js'
+			client: {
+				options: { jshintrc: 'client/.jshintrc' },
+				src: 'client/**/*.js'
+			},
+
+			server: {
+				options: { jshintrc: 'server/.jshintrc' },
+				src: 'server/**/*.js'
 			},
 
 			test: {
@@ -26,10 +32,19 @@ module.exports = function(grunt) {
 				stripBanners: true,
 			},
 
-			dist: {
+			client: {
 				files: {
-					'dist/<%=pkg.name%>.js': [ 'src/cxl.js' ],
-					'dist/<%=pkg.name%>.dbg.js': [ 'src/cxl.js', 'src/cxl-debug.js' ]
+					'dist/<%=client.name%>.js': [ 'client/cxl.js' ],
+					'dist/<%=client.name%>.dbg.js': [
+						'client/cxl.js', 'src/cxl-debug.js' ]
+				}
+			},
+
+			setver: {
+				files: {
+					'dist/<%=server.name%>.js': [ 'server/cxl.js' ],
+					'dist/<%=server.name%>.dbg.js': [
+						'server/cxl.js', 'src/cxl-debug.js' ]
 				}
 			},
 
@@ -54,33 +69,27 @@ module.exports = function(grunt) {
 		},
 
 		uglify: {
-			dist: {
+			client: {
 				compress: true,
 				files: {
-					'dist/<%= pkg.name %>.min.js': 'dist/<%= pkg.name %>.js'
-				}
-			},
-
-			release: {
-				compress: true,
-				files: {
-					'dist/<%= pkg.name %>.<%= pkg.version %>.min.js': 'dist/<%= pkg.name %>.js'
+					'dist/<%= client.name %>.min.js': 'dist/<%= client.name %>.js',
+					'dist/<%= server.name %>.min.js': 'dist/<%= server.name %>.js'
 				}
 			}
 		},
 
 		less: {
 
-			main: {
+			client: {
 				options: {
 					paths: [ 'bower_components', 'less' ],
 					sourceMap: true,
 					strictImports: true,
-					sourceMapURL: '<%= pkg.name %>.css.map',
+					sourceMapURL: '<%= client.name %>.css.map',
 					compress: true
 				},
 				files: {
-					'dist/<%= pkg.name %>.css': [
+					'dist/<%= client.name %>.css': [
 						'less/main.less'
 					]
 				}
@@ -95,7 +104,7 @@ module.exports = function(grunt) {
 
 			less: {
 				files: 'client/less/**/*.less',
-				tasks: [ 'less:main' ]
+				tasks: [ 'less:client' ]
 			},
 
 			test: {
