@@ -9,7 +9,8 @@
 		"express-session": "*",
 		"colors": "*",
 		"pg":"*",
-		"lodash": "*"
+		"lodash": "*",
+		"path-to-regexp": "*"
 	},
 	
 	"devDependencies": {

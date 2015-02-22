@@ -4,6 +4,7 @@ var
 	_ = require('lodash'),
 	express = require('express'),
 	colors = require('colors/safe'),
+	pathToRegexp = require('path-to-regexp'),
 
 	__modules = {}
 ;
@@ -20,6 +21,19 @@ function cxl(module)
 }
 
 _.extend(cxl, {
+
+	log: function(msg)
+	{
+		console.log(colors.cyan('cxl ') + msg);
+	},
+
+	error: function(msg)
+	{
+		console.error(colors.red(msg));
+
+		if (msg instanceof Error)
+			console.log(msg.stack);
+	},
 
 	/**
 	 * Defines a class
@@ -68,16 +82,49 @@ cxl.Service = cxl.define(class Service {
 	constructor(module, options)
 	{
 		this.module = module;
-		this.server = module.server;
 
 		_.extend(this, cxl.Service.defaults, options);
 
 		this.initialize();
 	}
 
-	middleware()
+	get url()
 	{
+		return this.__url;
+	}
 
+	set url(val)
+	{
+		this.__url = val;
+		this.__keys = [];
+
+		this.regex = pathToRegexp(val, this.__keys);
+	}
+
+	GET(req, res)
+	{
+		console.log(req.params);
+		res.end();
+	}
+
+	middleware(req, res, next)
+	{
+		if (this.regex && this.methods.indexOf(req.method)!==-1)
+		{
+			var m = this.regex.exec(req.path);
+
+			if (m)
+			{
+				req.params = _.object(
+					_.pluck(this.__keys, 'name'),
+					m.slice(1)
+				);
+
+				return this[req.method](req, res);
+			}
+		}
+
+		next();
 	}
 
 	initialize()
@@ -86,8 +133,9 @@ cxl.Service = cxl.define(class Service {
 
 }, {
 
+	__url: null,
+
 	module: null,
-	server: null,
 
 	/**
 	 * HTTP Methods
@@ -128,15 +176,27 @@ cxl.Module = cxl.define(class Module {
 	 */
 	service(name, fn)
 	{
-		var def, S;
+		var me = this, def, S;
 
 		if (fn)
 		{
-			def = fn();
-			def.name = name;
-			S = cxl.Service.extend(def);
+			me.__routes.push({
+				id: `service "${name}"`,
+				fn: 'use',
+				args: function()
+				{
+					def = fn();
 
-			this.__routes.push([ 'use' , S, name ]);
+					if (!def)
+						me.error('Invalid service definition');
+
+					def.name = name;
+					S = me.__services[name] = new cxl.Service(me, def);
+
+					return [ S.middleware.bind(S) ];
+				}
+			});
+
 			return this;
 		}
 
@@ -167,16 +227,26 @@ cxl.Module = cxl.define(class Module {
 	 */
 	use(middleware)
 	{
-		this.__routes.push([ 'use', middleware ]);
+		this.__routes.push({
+			id: `middleware ${middleware.name}`,
+			fn: 'use',
+			args: [ middleware.bind(this) ]
+		});
+
 		return this;
 	}
 
 	/**
 	 * Add new route. Order matters.
 	 */
-	route(/*method, path, fn*/)
+	route(method, path, fn)
 	{
-		this.__routes.push(arguments);
+		this.__routes.push({
+			id: `route ${method} ${path}`,
+			fn: method.toLowerCase(),
+			args: [ path, fn.bind(this) ]
+		});
+
 		return this;
 	}
 
@@ -208,6 +278,8 @@ cxl.Module = cxl.define(class Module {
 				this.host + ':' + this.port +
 				'. Make sure the host and port are not already in use.'
 			);
+		else
+			this.error(e);
 	}
 
 	startServer()
@@ -230,9 +302,7 @@ cxl.Module = cxl.define(class Module {
 
 	error(msg)
 	{
-		console.error(colors.red(this.name + ' ' + msg));
-		if (msg instanceof Error)
-			console.log(msg.stack);
+		cxl.error(msg);
 	}
 
 	extend(prop)
@@ -243,19 +313,9 @@ cxl.Module = cxl.define(class Module {
 	// TODO add validation
 	_loadRoute(def)
 	{
-		var method = def[0];
+		var args = _.result(def, 'args');
 
-		if (def[1].prototype instanceof cxl.Service)
-		{
-			var service = this.__services[def[2]] = new def[1](
-				this
-			);
-			this.server.use(service.middleware);
-		}
-		else if (def[2])
-			this.server[method](def[1], def[2].bind(this));
-		else
-			this.server[method](def[1].bind(this));
+		this.server[def.fn].apply(this.server, args);
 	}
 
 }, {
@@ -271,6 +331,11 @@ cxl.Module = cxl.define(class Module {
 	 */
 	__server: null,
 
+	/**
+	 * Node Server
+	 */
+	__listener: null,
+
 	__services: null,
 	__routes: null,
 
@@ -280,6 +345,5 @@ cxl.Module = cxl.define(class Module {
 }, {
 
 });
-
 
 module.exports = cxl;
