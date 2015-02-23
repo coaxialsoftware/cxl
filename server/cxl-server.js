@@ -88,28 +88,51 @@ cxl.Service = cxl.define(class Service {
 		this.initialize();
 	}
 
-	get url()
+	get path()
 	{
-		return this.__url;
+		return this.__path;
 	}
 
-	set url(val)
+	set path(val)
 	{
-		this.__url = val;
+		this.__path = val;
 		this.__keys = [];
 
 		this.regex = pathToRegexp(val, this.__keys);
 	}
 
-	GET(req, res)
+	response(route, result)
 	{
-		console.log(req.params);
-		res.end();
+		console.log(result);
+		if (result.rows)
+			return route.is_array ? result.rows : result.rows[0];
+	}
+
+	query(q)
+	{
+	var
+		db = this.module.db
+	;
+		return db.query({
+			text: q.text,
+			values: q.values
+		});
+	}
+
+	handle(req, res)
+	{
+	var
+		r = this[req.method](req, res)
+	;
+		this.query(r.query).then(this.response.bind(this, r))
+			.then(res.send.bind(res))
+		;
 	}
 
 	middleware(req, res, next)
 	{
-		if (this.regex && this.methods.indexOf(req.method)!==-1)
+		if (this.regex && this.methods.indexOf(req.method)!==-1 &&
+			this[req.method])
 		{
 			var m = this.regex.exec(req.path);
 
@@ -120,7 +143,7 @@ cxl.Service = cxl.define(class Service {
 					m.slice(1)
 				);
 
-				return this[req.method](req, res);
+				return this.handle(req, res);
 			}
 		}
 
@@ -133,7 +156,7 @@ cxl.Service = cxl.define(class Service {
 
 }, {
 
-	__url: null,
+	__path: null,
 
 	module: null,
 

@@ -39,7 +39,7 @@ override(cxl, 'include', function(module) {
 
 override(cxl, 'resolve', null, function(result) {
 	return result.fail(function() {
-		dbg('Resolve failed.');
+		cxl.error('Resolve failed.');
 	});
 });
 

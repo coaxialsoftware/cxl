@@ -45,3 +45,10 @@ override(cxl.Module.prototype, 'start', function() {
 }, function() {
 	this.log('Module successfully started.');
 });
+
+//
+// cxl.Service
+//
+override(cxl.Service.prototype, 'handle', function(req) {
+	this.module.log(`${this.name} ${req.method} ${req.path}`);
+});

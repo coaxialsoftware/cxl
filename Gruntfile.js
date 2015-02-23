@@ -28,7 +28,7 @@ module.exports = function(grunt) {
 
 		concat: {
 			options: {
-				banner: grunt.file.read('src/banner.txt'),
+				banner: grunt.file.read('client/banner.txt'),
 				stripBanners: true,
 			},
 
@@ -97,9 +97,9 @@ module.exports = function(grunt) {
 		},
 
 		watch: {
-			dist: {
-				files: '<%= jshint.dist.src %>',
-				tasks: [ 'jshint:dist', 'concat:dist', 'karma' ]
+			client: {
+				files: '<%= jshint.client.src %>',
+				tasks: [ 'jshint:client', 'concat:client', 'karma' ]
 			},
 
 			less: {
