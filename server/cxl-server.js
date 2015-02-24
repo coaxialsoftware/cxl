@@ -6,6 +6,8 @@ var
 	colors = require('colors/safe'),
 	pathToRegexp = require('path-to-regexp'),
 
+	Query = require('./cxl-server-query'),
+
 	__modules = {}
 ;
 
@@ -77,16 +79,7 @@ cxl.Adapter = cxl.define(class Adapter {
 
 });
 
-cxl.Service = cxl.define(class Service {
-
-	constructor(module, options)
-	{
-		this.module = module;
-
-		_.extend(this, cxl.Service.defaults, options);
-
-		this.initialize();
-	}
+cxl.Route = cxl.define(class Route {
 
 	get path()
 	{
@@ -101,50 +94,98 @@ cxl.Service = cxl.define(class Service {
 		this.regex = pathToRegexp(val, this.__keys);
 	}
 
-	response(route, result)
+	match(path)
 	{
-		console.log(result);
-		if (result.rows)
-			return route.is_array ? result.rows : result.rows[0];
+		var m = this.regex.exec(req.path);
+
+		if (m)
+		{
+			this.params = _.object(
+				_.pluck(this.__keys, 'name'),
+				m.slice(1)
+			);
+
+			return true;
+		}
 	}
 
-	query(q)
+}, {
+	__path: null
+});
+
+cxl.Service = cxl.define(class Service {
+
+	constructor(module, options)
 	{
-	var
-		db = this.module.db
-	;
-		return db.query({
-			text: q.text,
-			values: q.values
-		});
+		var defaults = cxl.Service.defaults;
+
+		this.module = module;
+		this.model = options.model;
+
+		this.route = new cxl.Route(_.extend({
+			path: '/' + this.name + '/:id?'
+		}, defaults.route, options.route));
+
+		this.query = new cxl.Query(_.extend({
+			idProperty: this.model.idProperty
+		}, defaults.query, options.query));
+
+		this.initialize();
+	}
+
+	GET(req, res)
+	{
+		return this.query.select();
+	}
+
+	POST(req, res)
+	{
+	}
+
+	PUT(req, res)
+	{
+
+	}
+
+	DELETE(req, res)
+	{
+
+	}
+
+	parse(result)
+	{
+		console.log(result);
+		var response = result.rows;
+
+		if (response)
+			response = route.isArray ? response : response[0];
+
+		return response;
+	}
+
+	doQuery(q)
+	{
+		return this.module.db.query(q);
 	}
 
 	handle(req, res)
 	{
 	var
-		r = this[req.method](req, res)
+		query = this[req.method](req, res)
 	;
-		this.query(r.query).then(this.response.bind(this, r))
+		this.doQuery(query)
+			.then(this.parse)
 			.then(res.send.bind(res))
 		;
 	}
 
 	middleware(req, res, next)
 	{
-		if (this.regex && this.methods.indexOf(req.method)!==-1 &&
-			this[req.method])
+		if (this.methods.indexOf(req.method)!==-1 &&
+			this[req.method] && this.route.match(req.path))
 		{
-			var m = this.regex.exec(req.path);
-
-			if (m)
-			{
-				req.params = _.object(
-					_.pluck(this.__keys, 'name'),
-					m.slice(1)
-				);
-
-				return this.handle(req, res);
-			}
+			req.params = this.route.params;
+			return this.handle(req, res);
 		}
 
 		next();
@@ -155,8 +196,6 @@ cxl.Service = cxl.define(class Service {
 	}
 
 }, {
-
-	__path: null,
 
 	module: null,
 

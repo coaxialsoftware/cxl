@@ -36,7 +36,8 @@ module.exports = function(grunt) {
 				files: {
 					'dist/<%=client.name%>.js': [ 'client/cxl.js' ],
 					'dist/<%=client.name%>.dbg.js': [
-						'client/cxl.js', 'src/cxl-debug.js' ]
+						'client/cxl.js', 'client/cxl-debug.js'
+					]
 				}
 			},
 

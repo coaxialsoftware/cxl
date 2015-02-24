@@ -11,14 +11,14 @@ module.exports = cxl.Query = cxl.define(class cxlQuery {
 		this.query = query;
 	}
 
-	get text()
+	select()
 	{
 	var
-		r = this.query,
-		select = r.select || '*',
+		r = this,
+		fields = r.fields || '*',
 		from = r.from,
 
-		text = r.text || (`SELECT ${select} FROM ${from}`),
+		text = r.text || (`SELECT ${fields} FROM ${from}`),
 		where, values
 	;
 		if (r.where)
@@ -37,7 +37,11 @@ module.exports = cxl.Query = cxl.define(class cxlQuery {
 			text += ' WHERE (' + where + ')';
 		}
 console.log(text, values);
-		return text;
+
+		return {
+			text: text,
+			values: values
+		};
 	}
 
 }, {

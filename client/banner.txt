@@ -1,11 +1,11 @@
 /*!
 * @license
 *
-* <%= pkg.name %> <%= pkg.version %>
-* <%= pkg.description %>
-* <%= pkg.homepage %>
+* <%= client.name %> <%= client.version %>
+* <%= client.description %>
+* <%= client.homepage %>
 *
-* Copyright 2010-2014, <%= pkg.author || 'Giancarlo F Bellido' %>
+* Copyright 2010-2014, <%= client.author || 'Giancarlo F Bellido' %>
 *
 * Date: <%= new Date() %>
 *
