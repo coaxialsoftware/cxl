@@ -10,7 +10,10 @@
 		"colors": "*",
 		"pg":"*",
 		"lodash": "*",
-		"path-to-regexp": "*"
+		"path-to-regexp": "*",
+		"bluebird": "*",
+		"bookshelf": "*",
+		"knex": "*"
 	},
 	
 	"devDependencies": {
@@ -21,6 +24,7 @@
 		"grunt-contrib-watch": "*",
 		"grunt-contrib-uglify": "*",
 		"grunt-contrib-less": "*",
+		"grunt-contrib-nodeunit": "*",
 
 		"grunt-karma": "*",
 		"karma-qunit": "*",

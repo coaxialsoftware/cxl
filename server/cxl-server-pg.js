@@ -4,7 +4,7 @@ var
 	Q = require('bluebird'),
 	_ = require('lodash'),
 
-	cxl = require('cxl-server')
+	cxl = require('./cxl-server')
 ;
 
 module.exports = cxl.Adapter.PG = cxl.define(class PG extends cxl.Adapter {

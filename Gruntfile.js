@@ -119,6 +119,15 @@ module.exports = function(grunt) {
 			}
 		},
 
+		nodeunit: {
+
+			all: [ 'test/*.js' ],
+			options: {
+				reporter: 'verbose'
+			}
+
+		},
+
 		karma: {
 
 			options: {
@@ -160,6 +169,8 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-less');
+	grunt.loadNpmTasks('grunt-contrib-nodeunit');
+
 	grunt.loadNpmTasks('grunt-karma');
 
 	grunt.registerTask('default', [ 'jshint', 'clean', 'concat', 'less' ]);

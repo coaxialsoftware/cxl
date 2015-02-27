@@ -6,8 +6,6 @@ var
 	colors = require('colors/safe'),
 	pathToRegexp = require('path-to-regexp'),
 
-	Query = require('./cxl-server-query'),
-
 	__modules = {}
 ;
 
@@ -65,21 +63,13 @@ _.extend(cxl, {
 
 });
 
-cxl.Adapter = cxl.define(class Adapter {
-
-	/**
-	 * Connects to DB.
-	 * @returns {Promise}
-	 */
-	connect() { abstract(); }
-
-}, {
-
-}, {
-
-});
 
 cxl.Route = cxl.define(class Route {
+
+	constructor(options)
+	{
+		_.extend(this, options);
+	}
 
 	get path()
 	{
@@ -96,7 +86,7 @@ cxl.Route = cxl.define(class Route {
 
 	match(path)
 	{
-		var m = this.regex.exec(req.path);
+		var m = this.regex.exec(path);
 
 		if (m)
 		{
@@ -120,62 +110,69 @@ cxl.Service = cxl.define(class Service {
 		var defaults = cxl.Service.defaults;
 
 		this.module = module;
-		this.model = options.model;
+
+		_.extend(this, defaults, options);
 
 		this.route = new cxl.Route(_.extend({
 			path: '/' + this.name + '/:id?'
-		}, defaults.route, options.route));
-
-		this.query = new cxl.Query(_.extend({
-			idProperty: this.model.idProperty
-		}, defaults.query, options.query));
+		}, options.route));
 
 		this.initialize();
 	}
 
-	GET(req, res)
+	__parse(result)
 	{
-		return this.query.select();
+		var response;
+
+		if (this.parse)
+		{
+			response = (typeof(this.parse)==='string') ?
+				result.get(this.parse) :
+				this.parse(result);
+		} else
+			response = result.toJSON();
+
+		return response || {};
 	}
 
-	POST(req, res)
+	__query(req)
 	{
+	var
+		model = new this.model()
+	;
+		if (this.query)
+			this.query(req, model);
+
+		return this[req.method](req, model);
 	}
 
-	PUT(req, res)
+	GET(req, model)
 	{
-
+		return model[model.id ? 'fetch' : 'fetchAll']({ columns: []});
 	}
 
-	DELETE(req, res)
+	POST(req, model)
 	{
-
+		return model.save(req.body);
 	}
 
-	parse(result)
+	PUT(req, model)
 	{
-		console.log(result);
-		var response = result.rows;
-
-		if (response)
-			response = route.isArray ? response : response[0];
-
-		return response;
+		model.set('id', req.params.id);
+		return this.POST(req, model);
 	}
 
-	doQuery(q)
+	error(res, err)
 	{
-		return this.module.db.query(q);
+		this.module.error(err);
+
+		res.status(500).end();
 	}
 
 	handle(req, res)
 	{
-	var
-		query = this[req.method](req, res)
-	;
-		this.doQuery(query)
-			.then(this.parse)
-			.then(res.send.bind(res))
+		this.__query(req).then(this.__parse.bind(this))
+			.then(res.send.bind(res), this.error.bind(this, res))
 		;
 	}
 
@@ -219,6 +216,8 @@ cxl.Module = cxl.define(class Module {
 	{
 		this.name = name;
 		this.__services = {};
+		this.__models = {};
+
 		this.__routes = [];
 
 		this.__run = [];
@@ -284,6 +283,18 @@ cxl.Module = cxl.define(class Module {
 		return this.use(fn());
 	}
 
+	model(name, fn)
+	{
+		if (fn)
+		{
+			this.__models[name] = fn;
+
+			return this;
+		}
+
+		return this.__models[name];
+	}
+
 	/**
 	 * Adds middleware to server
 	 */
@@ -318,6 +329,11 @@ cxl.Module = cxl.define(class Module {
 	start()
 	{
 		_.invoke(this.__config, 'call', this);
+
+		if (this.db)
+			this._loadDatabase();
+
+		_.each(this.__models, this._loadModel, this);
 		_.each(this.__routes, this._loadRoute, this);
 
 		if (this.__server)
@@ -372,6 +388,16 @@ cxl.Module = cxl.define(class Module {
 		return _.extend(this, prop);
 	}
 
+	_loadDatabase()
+	{
+		var knex = require('knex')({
+			client: 'pg',
+			connection: this.db
+		});
+
+		this.bookshelf = require('bookshelf')(knex);
+	}
+
 	// TODO add validation
 	_loadRoute(def)
 	{
@@ -380,8 +406,15 @@ cxl.Module = cxl.define(class Module {
 		this.server[def.fn].apply(this.server, args);
 	}
 
+	_loadModel(def, name)
+	{
+		this.__models[name] = this.bookshelf.Model.extend(def.call(this));
+	}
+
 }, {
 
+	// knex database connection settings
+	db: null,
 	name: null,
 	logColor: 'blue',
 
@@ -400,6 +433,7 @@ cxl.Module = cxl.define(class Module {
 
 	__services: null,
 	__routes: null,
+	__models: null,
 
 	__config: null,
 	__run: null
@@ -408,4 +442,5 @@ cxl.Module = cxl.define(class Module {
 
 });
 
-module.exports = cxl;
+// Add to globals so models can be shared by server and client.
+module.exports = global.cxl = cxl;

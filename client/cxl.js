@@ -203,18 +203,20 @@ cxl.Model = Backbone.Model.extend({
 
 }, {
 
-	get: function(data)
+	get: function(data, method)
 	{
 		var model = new this(data);
+		method = method || 'fetch';
 
-		return model.fetch().then(function() {
+		return model[method]().then(function() {
 			return model;
 		});
 	},
 
-	create: function(id)
+	create: function(id, init)
 	{
-		return id!==undefined ? this.get({ id: id }) : new this();
+		return this.get.apply(this, id ?
+			[ {id: id} ] : [ init, 'save' ]);
 	},
 
 	query: function()
@@ -325,8 +327,8 @@ _.extend(cxl.Module.prototype, {
 		if (!this.started)
 		{
 			_.invoke(this.__config, 'call', this);
-			_.each(this.__views, this.__loadView, this);
 			_.each(this.__models, this.__loadModel, this);
+			_.each(this.__views, this.__loadView, this);
 			_.invoke(this.__routes, 'call', this);
 
 			_.invoke(this.__run, 'call', this);
