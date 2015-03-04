@@ -6,6 +6,8 @@
 
   "dependencies": {
     "bootstrap": "*",
-    "backbone": "*"
+    "backbone": "*",
+    "stickit": "*",
+    "backbone-validation": "*"
   }
 }

@@ -199,9 +199,9 @@ cxl.Router = Backbone.Router.extend({
 
 });
 
-cxl.Model = Backbone.Model.extend({
+cxl.Model = Backbone.Model;
 
-}, {
+_.extend(cxl.Model, {
 
 	get: function(data, method)
 	{

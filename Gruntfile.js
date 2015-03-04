@@ -5,6 +5,10 @@ module.exports = function(grunt) {
 		client: grunt.file.readJSON('bower.json'),
 		server: grunt.file.readJSON('package.json'),
 
+		src: {
+			client: [ 'client/cxl.js', 'client/cxl-form.js' ]
+		},
+
 		clean: {
 			client: [ 'client' ]
 		},
@@ -34,9 +38,9 @@ module.exports = function(grunt) {
 
 			client: {
 				files: {
-					'dist/<%=client.name%>.js': [ 'client/cxl.js' ],
+					'dist/<%=client.name%>.js': '<%=src.client%>',
 					'dist/<%=client.name%>.dbg.js': [
-						'client/cxl.js', 'client/cxl-debug.js'
+						'<%= src.client %>', 'client/cxl-debug.js'
 					]
 				}
 			},

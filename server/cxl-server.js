@@ -63,7 +63,6 @@ _.extend(cxl, {
 
 });
 
-
 cxl.Route = cxl.define(class Route {
 
 	constructor(options)
@@ -138,8 +137,12 @@ cxl.Service = cxl.define(class Service {
 	__query(req)
 	{
 	var
-		model = new this.model()
+		model = new this.model(),
+		id = req.params[model.idAttribute]
 	;
+		if (id)
+			model.set(model.idAttribute, id);
+
 		if (this.query)
 			this.query(req, model);
 
@@ -158,8 +161,14 @@ cxl.Service = cxl.define(class Service {
 
 	PUT(req, model)
 	{
-		model.set('id', req.params.id);
+		model.set(model.idProperty, req.params[model.idProperty]);
 		return this.POST(req, model);
+	}
+
+	DELETE(req, model)
+	{
+		model.set(model.idProperty, req.params[model.idProperty]);
+		return model.remove();
 	}
 
 	error(res, err)
@@ -246,10 +255,14 @@ cxl.Module = cxl.define(class Module {
 				fn: 'use',
 				args: function()
 				{
-					def = fn();
+					def = fn(me);
 
 					if (!def)
 						me.error('Invalid service definition');
+					if (!def.model)
+						def.model = me.model(name);
+					if (!def.model.prototype.tableName)
+						def.model.prototype.tableName = name;
 
 					def.name = name;
 					S = me.__services[name] = new cxl.Service(me, def);

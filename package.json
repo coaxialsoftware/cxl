@@ -1,5 +1,5 @@
 {
-	"name": "cxl-server",
+	"name": "cxl",
 	"author": "Giancarlo Bellido",
 	"version": "1.0.0",
 	"main": "server/cxl-server.js",
