@@ -6,7 +6,9 @@
 
 var
 	__modules = {},
-	__templates = {}
+	__templates = {},
+
+	createFn = function() { return this; }
 ;
 
 /** @namespace */
@@ -199,30 +201,33 @@ cxl.Router = Backbone.Router.extend({
 
 });
 
+
 cxl.Model = Backbone.Model;
 
 _.extend(cxl.Model, {
 
-	get: function(data, method)
+	get: function(data, options)
 	{
-		var model = new this(data);
-		method = method || 'fetch';
+		var model = new this(data, options);
 
-		return model[method]().then(function() {
-			return model;
-		});
+		return model.fetch().then(createFn.bind(model));
 	},
 
-	create: function(id, init)
+	create: function(data, options)
 	{
-		return this.get.apply(this, id ?
-			[ {id: id} ] : [ init, 'save' ]);
+		if (!data.id)
+			delete data.id;
+
+		var model = _.extend(new this(data), options);
+
+		return model[model.id ? 'fetch' : 'save']().then(createFn.bind(model));
 	},
 
 	query: function()
 	{
 		var collection = new Backbone.Collection();
 
+		collection.model = this;
 		collection.url = this.prototype.urlRoot;
 
 		return collection.fetch().then(function() {

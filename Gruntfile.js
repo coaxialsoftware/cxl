@@ -6,7 +6,7 @@ module.exports = function(grunt) {
 		server: grunt.file.readJSON('package.json'),
 
 		src: {
-			client: [ 'client/cxl.js', 'client/cxl-form.js' ]
+			client: [ 'client/cxl.js', 'client/cxl-binding.js', 'client/cxl-form.js' ]
 		},
 
 		clean: {
@@ -45,7 +45,7 @@ module.exports = function(grunt) {
 				}
 			},
 
-			setver: {
+			server: {
 				files: {
 					'dist/<%=server.name%>.js': [ 'server/cxl.js' ],
 					'dist/<%=server.name%>.dbg.js': [
@@ -155,9 +155,9 @@ module.exports = function(grunt) {
 						'bower_components/bootstrap/dist/js/bootstrap.js',
 						'bower_components/underscore/underscore.js',
 						'bower_components/backbone/backbone.js',
-						'src/cxl.js', 'src/cxl-debug.js'
+						'<%= src.client %>'
 					]},
-					{ src: 'test/**/*.js' }
+					{ src: 'test/client/*.js' }
 				],
 				preprocessors: {
 					'src/**/*.js': [ 'coverage' ]

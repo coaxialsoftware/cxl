@@ -67,7 +67,10 @@ cxl.Route = cxl.define(class Route {
 
 	constructor(options)
 	{
-		_.extend(this, options);
+		if (typeof(options)==='string')
+			this.path = options;
+		else
+			_.extend(this, options);
 	}
 
 	get path()
@@ -112,9 +115,8 @@ cxl.Service = cxl.define(class Service {
 
 		_.extend(this, defaults, options);
 
-		this.route = new cxl.Route(_.extend({
-			path: '/' + this.name + '/:id?'
-		}, options.route));
+		this.route = new cxl.Route(options.route ||
+			('/' + this.name + '/:id?'));
 
 		this.initialize();
 	}
@@ -138,15 +140,17 @@ cxl.Service = cxl.define(class Service {
 	{
 	var
 		model = new this.model(),
-		id = req.params[model.idAttribute]
+		id = req.params[model.idAttribute],
+		cb = this[req.method].bind(this, req, model),
+		promise
 	;
 		if (id)
 			model.set(model.idAttribute, id);
 
 		if (this.query)
-			this.query(req, model);
+			promise = this.query(req, model);
 
-		return this[req.method](req, model);
+		return promise ? promise.then(cb) : cb();
 	}
 
 	GET(req, model)
@@ -204,6 +208,11 @@ cxl.Service = cxl.define(class Service {
 }, {
 
 	module: null,
+
+	/**
+	 *
+	 */
+	query: null,
 
 	/**
 	 * HTTP Methods
@@ -421,7 +430,7 @@ cxl.Module = cxl.define(class Module {
 
 	_loadModel(def, name)
 	{
-		this.__models[name] = this.bookshelf.Model.extend(def.call(this));
+		this.__models[name] = this.bookshelf.Model.extend(def.call(this, this));
 	}
 
 }, {

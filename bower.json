@@ -7,7 +7,7 @@
   "dependencies": {
     "bootstrap": "*",
     "backbone": "*",
-    "stickit": "*",
-    "backbone-validation": "*"
+    "backbone-validation": "*",
+    "backbone.stickit": "*"
   }
 }
