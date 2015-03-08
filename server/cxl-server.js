@@ -175,6 +175,12 @@ cxl.Service = cxl.define(class Service {
 		return model.remove();
 	}
 
+	PATCH(req, model)
+	{
+		model.query('column', _.keys(req.params.body));
+		return this.PUT(req, model);
+	}
+
 	error(res, err)
 	{
 		this.module.error(err);
@@ -223,7 +229,7 @@ cxl.Service = cxl.define(class Service {
 }, {
 
 	defaults: {
-		methods: [ 'GET', 'POST', 'PUT', 'DELETE' ]
+		methods: [ 'GET', 'POST', 'PUT', 'DELETE', 'PATCH' ]
 	}
 
 });

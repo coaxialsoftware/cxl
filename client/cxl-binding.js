@@ -36,6 +36,11 @@ _.extend(cxl.Binding.prototype, {
 	handler: null,
 	regex: cxl.Binding.ATTR_REGEX,
 
+	/// Current model value
+	value: null,
+	/// Current view Value
+	viewValue: null,
+
 	setViewValue: null,
 	getViewValue: null,
 	getter: null,
@@ -56,7 +61,9 @@ _.extend(cxl.Binding.prototype, {
 
 	_setter: function(val)
 	{
-		this.model.set(this._attr, val, { silent: true });
+		this.model.set(this._attr, val, {
+			el: this.el, validate: true
+		});
 	},
 
 	setViewHandlers: function()
@@ -97,9 +104,9 @@ _.extend(cxl.Binding.prototype, {
 				'; } catch(e) { return null; }') : this._getter;
 
 		if (!this.setter)
-			this.setter = this._prop ? new Function('val', 'var attr=this.model.get("' +
-				this._attr + '") || {}; attr' + this._prop +
-				'=val; this.model.set("' + this._attr + '", attr, { silent: true });') : this._setter;
+			this.setter = this._prop ? new Function('val', 'var attr=_.extend({}, this.model.get("' +
+				this._attr + '")); attr' + this._prop +
+				'=val; this._setter(attr);') : this._setter;
 	},
 
 	unbind: function()
@@ -114,17 +121,24 @@ _.extend(cxl.Binding.prototype, {
 		this.model.on('change:' + this._attr,
 			this.onModelChange, this);
 		this._ovc = this.onViewChange.bind(this);
-		this.el.on('change', this._ovc);
+		this.el.on('change input', this._ovc);
 	},
 
-	onModelChange: function(model, val)
+	onModelChange: function()
 	{
-		this.setViewValue(val);
+		this.value = this.getter();
+		this.setViewValue(this.value);
 	},
 
 	onViewChange: function()
 	{
-		this.setter(this.getViewValue());
+		var val = this.getViewValue();
+
+		if (this.viewValue!==val)
+		{
+			this.setter(val);
+			this.viewValue = val;
+		}
 	}
 
 });

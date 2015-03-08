@@ -10,7 +10,7 @@ module.exports = function(grunt) {
 		},
 
 		clean: {
-			client: [ 'client' ]
+			client: [ 'dist' ]
 		},
 
 		jshint: {
