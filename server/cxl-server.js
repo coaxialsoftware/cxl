@@ -5,14 +5,10 @@ var
 	express = require('express'),
 	colors = require('colors/safe'),
 	pathToRegexp = require('path-to-regexp'),
+	path=require('path'),
 
 	__modules = {}
 ;
-
-function abstract()
-{
-	throw "Attempting to call abstract function.";
-}
 
 function cxl(module)
 {
@@ -22,6 +18,14 @@ function cxl(module)
 
 _.extend(cxl, {
 
+	static: function(a, b)
+	{
+		if (typeof(a)==='string')
+			a = path.normalize(a);
+
+		return express.static.call(this, a, b);
+	},
+
 	log: function(msg)
 	{
 		console.log(colors.cyan('cxl ') + msg);
@@ -29,10 +33,10 @@ _.extend(cxl, {
 
 	error: function(msg)
 	{
-		console.error(colors.red(msg));
-
 		if (msg instanceof Error)
-			console.log(msg.stack);
+			console.error(msg.stack);
+		else
+			console.error(colors.red(msg));
 	},
 
 	/**
@@ -405,6 +409,7 @@ cxl.Module = cxl.define(class Module {
 	error(msg)
 	{
 		this.log(colors.red(msg));
+		cxl.error(msg);
 	}
 
 	extend(prop)

@@ -45,13 +45,13 @@ module.exports = function(grunt) {
 				}
 			},
 
-			server: {
+			/*server: {
 				files: {
 					'dist/<%=server.name%>.js': [ 'server/cxl.js' ],
 					'dist/<%=server.name%>.dbg.js': [
 						'server/cxl.js', 'src/cxl-debug.js' ]
 				}
-			},
+			},*/
 
 			tpl: {
 
@@ -77,8 +77,8 @@ module.exports = function(grunt) {
 			client: {
 				compress: true,
 				files: {
-					'dist/<%= client.name %>.min.js': 'dist/<%= client.name %>.js',
-					'dist/<%= server.name %>.min.js': 'dist/<%= server.name %>.js'
+					'dist/<%= client.name %>.min.js': 'dist/<%= client.name %>.js'
+					//'dist/<%= server.name %>.min.js': 'dist/<%= server.name %>.js'
 				}
 			}
 		},

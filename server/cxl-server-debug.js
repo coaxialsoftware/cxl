@@ -31,7 +31,9 @@ function override(obj, fn, pre, post)
 //
 // cxl
 //
-
+override(cxl, 'static', null, function(res, op) {
+	this.log('Serving static files from ' + op);
+});
 
 //
 // cxl.Module
