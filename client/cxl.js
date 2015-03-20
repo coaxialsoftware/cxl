@@ -108,8 +108,13 @@ _.extend(cxl, {
 
 cxl.View = Backbone.View.extend({
 
-	selector: null,
+	name: null,
+
+	/// Owner module
 	module: null,
+
+	/// Template Id
+	templateUrl: null,
 
 	resolve: null,
 
@@ -140,10 +145,9 @@ cxl.View = Backbone.View.extend({
 				view.template = _.template(view.template);
 
 			if (view.template)
-				view.$el.html(view.template(view));
+				view.compile();
 
 		    view.delegateEvents();
-		    // TODO set attributes object
 			view.render();
 		}
 
@@ -151,6 +155,11 @@ cxl.View = Backbone.View.extend({
 			cxl.resolve(resolve, view).then(load);
 		else
 			load();
+	},
+
+	compile: function()
+	{
+		this.$el.html(this.template(this));
 	}
 
 }, {
@@ -195,6 +204,8 @@ cxl.Router = Backbone.Router.extend({
 				new Callback({ parameters: args });
 
 			this.$content.html(view.$el.addClass('enter'));
+			this.trigger('cxl.route', view);
+
 		} else if (Callback)
 			Callback.apply(this, args);
 	}
@@ -223,9 +234,9 @@ _.extend(cxl.Model, {
 		return model[model.id ? 'fetch' : 'save']().then(createFn.bind(model));
 	},
 
-	query: function()
+	query: function(options)
 	{
-		var collection = new Backbone.Collection();
+		var collection = new Backbone.Collection(options);
 
 		collection.model = this;
 		collection.url = this.prototype.urlRoot;
@@ -312,12 +323,12 @@ _.extend(cxl.Module.prototype, {
 		return this;
 	},
 
-	view: function(selector, fn)
+	view: function(name, fn)
 	{
 		if (fn===undefined)
-			return this.__views[selector];
+			return this.__views[name];
 
-		this.__views[selector] = fn;
+		this.__views[name] = fn;
 
 		return this;
 	},
@@ -354,10 +365,10 @@ _.extend(cxl.Module.prototype, {
 		this.__models[name] = cxl.Model.extend(fn.call(this));
 	},
 
-	__loadView: function(fn, selector)
+	__loadView: function(fn, name)
 	{
-		this.__views[selector] = cxl.View.extend(_.extend({
-			selector: selector,
+		this.__views[name] = cxl.View.extend(_.extend({
+			name: name,
 			module: this
 		}, fn.call(this)));
 	}

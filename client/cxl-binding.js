@@ -1,6 +1,9 @@
 
 (function(cxl, _, $) {
 
+/**
+ * Two way binding for backbone models.
+ */
 cxl.Binding = function(options)
 {
 	_.extend(this, options);
@@ -9,7 +12,6 @@ cxl.Binding = function(options)
 	this.parseAttribute();
 	this.setViewHandlers();
 	this.bind();
-	this._sync();
 };
 
 _.extend(cxl.Binding, {
@@ -30,11 +32,16 @@ _.extend(cxl.Binding, {
 
 _.extend(cxl.Binding.prototype, {
 
+	/**
+	 * DOM element.
+	 */
 	el: null,
+
+	/**
+	 * Backbone.Model
+	 */
 	model: null,
 	attribute: null,
-	handler: null,
-	regex: cxl.Binding.ATTR_REGEX,
 
 	/// Current model value
 	value: null,
@@ -48,11 +55,6 @@ _.extend(cxl.Binding.prototype, {
 
 	_attr: null,
 	_prop: null,
-
-	_sync: function()
-	{
-		this.setViewValue(this.getter());
-	},
 
 	_getter: function()
 	{
@@ -93,7 +95,7 @@ _.extend(cxl.Binding.prototype, {
 	parseAttribute: function()
 	{
 		/*jshint evil:true*/
-		var m = this.regex.exec(this.attribute);
+		var m = cxl.Binding.ATTR_REGEX.exec(this.attribute);
 
 		this._attr = m && m[1] || this.attribute;
 		this._prop = m && m[2];
@@ -120,6 +122,8 @@ _.extend(cxl.Binding.prototype, {
 	{
 		this.model.on('change:' + this._attr,
 			this.onModelChange, this);
+		this.onModelChange();
+
 		this._ovc = this.onViewChange.bind(this);
 		this.el.on('change input', this._ovc);
 	},

@@ -121,19 +121,16 @@ cxl.Service = cxl.define(class Service {
 		this.initialize();
 	}
 
+	parse(result)
+	{
+		return result.toJSON();
+	}
+
 	__parse(result)
 	{
-		var response;
-
-		if (this.parse)
-		{
-			response = (typeof(this.parse)==='string') ?
-				result.get(this.parse) :
-				this.parse(result);
-		} else
-			response = result.toJSON();
-
-		return response || {};
+		return ((typeof(this.parse)==='string') ?
+			result.get(this.parse) :
+			this.parse(result)) || {};
 	}
 
 	__query(req)
@@ -145,7 +142,7 @@ cxl.Service = cxl.define(class Service {
 		promise
 	;
 		if (id)
-			model.set(model.idAttribute, id);
+			model.set(model.idAttribute, id|0);
 
 		if (this.query)
 			promise = this.query(req, model);
@@ -172,12 +169,11 @@ cxl.Service = cxl.define(class Service {
 	DELETE(req, model)
 	{
 		model.set(model.idProperty, req.params[model.idProperty]);
-		return model.remove();
+		return model.destroy();
 	}
 
 	PATCH(req, model)
 	{
-		model.query('column', _.keys(req.params.body));
 		return this.PUT(req, model);
 	}
 
@@ -408,7 +404,7 @@ cxl.Module = cxl.define(class Module {
 
 	error(msg)
 	{
-		cxl.error(msg);
+		this.log(colors.red(msg));
 	}
 
 	extend(prop)

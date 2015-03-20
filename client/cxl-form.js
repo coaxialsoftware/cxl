@@ -7,6 +7,20 @@ Backbone.Validation.configure({
 	forceUpdate: true
 });
 
+_.extend(Backbone.Validation.validators, {
+
+	json: function(value)
+	{
+		try {
+			if (value!=="")
+				JSON.parse(value);
+		} catch(e) {
+			return 'Invalid JSON: ' + e.toString();
+		}
+	}
+
+});
+
 _.extend(Backbone.Model.prototype, Backbone.Validation.mixin);
 
 cxl.Field = Backbone.View.extend({
@@ -57,7 +71,7 @@ cxl.Field = Backbone.View.extend({
 	{
 		Backbone.View.apply(this, arguments);
 
-		this.$group = this.$el.parents('.form-group:eq(0)');
+		this.$group = this.$el.parents('.form-group');
 		this.$label = this.$group.find('label');
 		this.$error = this.$group.find('.error-block');
 
@@ -121,7 +135,7 @@ cxl.Form = Backbone.View.extend({
 
 			if (field.binding)
 			{
-				var err = errors[field.binding._attr];
+				var err = errors[field.binding.attribute];
 				field[err ? 'setInvalid' : 'setValid'](err);
 			}
 		}, this);
