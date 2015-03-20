@@ -52,21 +52,11 @@ override(cxl.Module.prototype, '_loadModel', function(def, name) {
 	this.log('Loading model ' + name);
 });
 
-cxl.Module.prototype._loadDatabase = function()
-{
-var
-	me = this,
-	knex = require('knex')({
-		client: 'pg',
-		connection: this.db
-	});
-
-	knex.on('query', function(d) {
-		me.log(d.sql + ' [ ' + d.bindings + ' ]');
-	});
-
-	this.bookshelf = require('bookshelf')(knex);
-};
+override(cxl.Module.prototype, '_loadDatabase', null, function() {
+	this.bookshelf.knex.on('query', function(d) {
+		this.log(d.sql + ' [ ' + d.bindings + ' ]');
+	}, this);
+});
 
 //
 // cxl.Service

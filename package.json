@@ -13,7 +13,8 @@
 		"path-to-regexp": "*",
 		"bluebird": "*",
 		"bookshelf": "*",
-		"knex": "*"
+		"knex": "*",
+		"sqlite3": "*"
 	},
 	
 	"devDependencies": {
