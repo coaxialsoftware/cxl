@@ -414,10 +414,10 @@ cxl.Module = cxl.define(class Module {
 
 	_loadDatabase()
 	{
-		var knex = require('knex')({
+		var knex = require('knex')(typeof(this.db)==='string' ? {
 			client: 'pg',
 			connection: this.db
-		});
+		} : this.db);
 
 		this.bookshelf = require('bookshelf')(knex);
 	}
@@ -437,7 +437,10 @@ cxl.Module = cxl.define(class Module {
 
 }, {
 
-	// knex database connection settings
+	/**
+	 * knex database connection settings. If it is a string it will be
+	 * treated as a connection string for a postgresql server.
+	 */
 	db: null,
 	name: null,
 	logColor: 'blue',
