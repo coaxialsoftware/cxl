@@ -437,7 +437,10 @@ cxl.Module = cxl.define(class Module {
 
 	_loadModel(def, name)
 	{
-		this.__models[name] = this.bookshelf.Model.extend(def.call(this, this));
+		if (this.bookshelf)
+			this.__models[name] = this.bookshelf.Model.extend(def.call(this, this));
+		else
+			this.log('Model ' + name + ' not initialized because DB connection not available.');
 	}
 
 }, {
