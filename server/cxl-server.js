@@ -421,7 +421,11 @@ cxl.Module = cxl.define(class Module {
 	{
 		var knex = require('knex')(typeof(this.db)==='string' ? {
 			client: 'pg',
-			connection: this.db
+			connection: this.db,
+			pool: {
+				min: 0,
+				max: 10
+			}
 		} : this.db);
 
 		this.bookshelf = require('bookshelf')(knex);

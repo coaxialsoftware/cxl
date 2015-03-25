@@ -53,9 +53,10 @@ override(cxl.Module.prototype, '_loadModel', function(def, name) {
 });
 
 override(cxl.Module.prototype, '_loadDatabase', null, function() {
+	var me = this;
 	this.bookshelf.knex.on('query', function(d) {
-		this.log(d.sql + ' [ ' + d.bindings + ' ]');
-	}, this);
+		me.log(d.sql + ' [ ' + d.bindings + ' ]');
+	});
 });
 
 //
