@@ -8,9 +8,10 @@
 	"maxdepth":3,
 	"freeze": true,
 	"browser": true,
+	"node": true,
 	"globals": {
-		"module": false, "test": false,
-		"j5g3": false, "compare": false,
-		"basePath": true
+		"QUnit": false,
+		"cxl": true,
+		"Firebase": false
 	}
 }

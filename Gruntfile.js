@@ -6,7 +6,7 @@ module.exports = function(grunt) {
 		server: grunt.file.readJSON('package.json'),
 
 		src: {
-			client: [ 'client/cxl.js', 'client/cxl-binding.js', 'client/cxl-form.js' ]
+			client: [ 'client/cxl.js', 'client/cxl-fire.js', 'client/cxl-form.js' ]
 		},
 
 		clean: {
@@ -112,9 +112,9 @@ module.exports = function(grunt) {
 				tasks: [ 'less:client' ]
 			},
 
-			test: {
-				files: 'test/**/*.js',
-				tasks: [ 'jshint:test', 'karma' ]
+			test_client: {
+				files: 'test/client/**/*.js',
+				tasks: [ 'jshint:test', 'karma:client' ]
 			},
 
 			tpl: {
@@ -145,7 +145,7 @@ module.exports = function(grunt) {
 				}
 			},
 
-			dist: {
+			client: {
 				plugins: [
 					'karma-qunit', 'karma-coverage', 'karma-phantomjs-launcher'
 				],
@@ -155,6 +155,8 @@ module.exports = function(grunt) {
 						'bower_components/bootstrap/dist/js/bootstrap.js',
 						'bower_components/underscore/underscore.js',
 						'bower_components/backbone/backbone.js',
+						'bower_components/backbone-validation/dist/backbone-validation.js',
+						'bower_components/firebase/firebase.js',
 						'<%= src.client %>'
 					]},
 					{ src: 'test/client/*.js' }

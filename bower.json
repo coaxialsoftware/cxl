@@ -8,6 +8,6 @@
     "bootstrap": "*",
     "backbone": "*",
     "backbone-validation": "*",
-    "backbone.stickit": "*"
+    "firebase": "*"
   }
 }

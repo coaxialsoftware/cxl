@@ -28,18 +28,37 @@ $(function() {
 
 	var $content = cxl.$content || $('[cxl-content]');
 
+	// Setup dependencies
+	// TODO should we remove this
+	$.ajaxSetup({ xhrFields: { withCredentials: true } });
+
 	_.extend(cxl, {
 		$body: $('body'),
 		$window: $(window),
 		$doc: $(document),
 		$content: $content,
-		router: new cxl.Router({ $content: $content })
+		router: new cxl.Router({ $content: $content }),
+		loginRoute: '/login'
 	});
 
 	// Autoload modules
 	$('[cxl]').each(function() {
 		cxl.include(this.getAttribute('cxl'));
 	}).addClass('cxl-ready');
+
+
+	/**
+	 * Handle forbidden ajax requests.
+	 *
+	 * If there a "/login" route it will automatically redirect.
+	 */
+	$(document).ajaxError(function() {
+		if (arguments[3]==='Forbidden')
+		{
+			if (cxl.router.routes[cxl.loginRoute])
+				cxl.go(cxl.loginRoute);
+		}
+	});
 
 });
 
