@@ -20,11 +20,16 @@ cxl.Binding = function(options)
 	this.bind();
 };
 
+cxl.bind = function(op)
+{
+	return new cxl.Binding(op);
+};
+
 _.extend(cxl.Binding, {
 
 	setView: {
-		value: function(val) { this.el.val(val); },
-		checkbox: function(val) { this.el.prop('checked', !!val); }
+		value: function(val) { return this.el.val(val); },
+		checkbox: function(val) { return this.el.prop('checked', !!val); }
 	},
 
 	getView: {
@@ -81,7 +86,7 @@ _.extend(cxl.Binding.prototype, {
 
 	onModelChange: function(snapshot)
 	{
-		this.setViewValue(snapshot.val());
+		this.setViewValue(snapshot.val()).trigger('sync', snapshot);
 	},
 
 	onViewChange: function()

@@ -12,6 +12,7 @@
 	"globals": {
 		"QUnit": false,
 		"cxl": true,
-		"Firebase": false
+		"Firebase": false,
+		"$": false
 	}
 }

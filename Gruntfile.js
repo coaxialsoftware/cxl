@@ -151,6 +151,7 @@ module.exports = function(grunt) {
 				],
 				files: [
 					{ src: [
+						'client/cxl-polyfill.js',
 						'bower_components/jquery/dist/jquery.js',
 						'bower_components/bootstrap/dist/js/bootstrap.js',
 						'bower_components/underscore/underscore.js',
