@@ -14,6 +14,8 @@ cxl.Binding = function(options)
 {
 	this.el = $(options.el);
 	this.ref = options.ref;
+	this.validate = options.validate;
+
 	this._onComplete = this.onComplete.bind(this);
 	this.setViewHandlers();
 	this.bind();
@@ -68,6 +70,11 @@ _.extend(cxl.Binding.prototype, Backbone.Events, {
 	 */
 	viewValue: null,
 
+	/**
+	 * Validator Function
+	 */
+	validate: null,
+
 	setViewHandlers: function()
 	{
 	var
@@ -105,6 +112,9 @@ _.extend(cxl.Binding.prototype, Backbone.Events, {
 	{
 		var val = this.getViewValue();
 
+		if (this.validate && this.validate(val)===false)
+			return;
+
 		if (this.value!==val)
 			this.ref.set(val, this._onComplete);
 		else if (this.viewValue!==val)
@@ -125,30 +135,62 @@ _.extend(cxl.Binding.prototype, Backbone.Events, {
 
 });
 
+cxl.validator = function(op)
+{
+	return function(val)
+	{
+		var rule, fn;
+
+		for (rule in op)
+		{
+			fn = cxl.Validators[rule];
+
+			if (fn && fn(val, op[rule])!==true)
+			{
+				this.trigger('error', {
+					code: 'PERMISSION_DENIED',
+					validator: rule
+				});
+				return false;
+			}
+		}
+	};
+};
+
 cxl.Validation = {
 
 	Messages: {
 		json: 'Invalid JSON.',
 		required: 'Field is required'
+	}
+};
+
+cxl.Validators = {
+
+	json: function(value)
+	{
+		try {
+			if (value!=="")
+				JSON.parse(value);
+		} catch(e) {
+			return false;
+		}
+		return true;
 	},
 
-	Validators: {
+	required: function(value)
+	{
+		return (value!==undefined && value!==null && value!=="");
+	},
 
-		json: function(value)
-		{
-			try {
-				if (value!=="")
-					JSON.parse(value);
-			} catch(e) {
-				return false;
-			}
-			return true;
-		},
+	max: function(value, max)
+	{
+		return _.isNumber(value) && (value <= max);
+	},
 
-		required: function(value)
-		{
-			return (value!==undefined && value!==null && value!=="");
-		}
+	maxlength: function(value, max)
+	{
+		return value && _.has(value, 'length') && value.length<=max;
 	}
 
 };

@@ -106,15 +106,71 @@ var
 	el = $('<input type="checkbox">'),
 	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/bool') })
 ;
-	a.ok(b);
 	el.prop('checked', false).change();
 
 	b.on('error', function(err) {
 		a.ok(err);
+		a.equal(err.code, 'PERMISSION_DENIED');
 		a.equal(el.prop('checked'), true);
 		b.unbind();
 		done();
 	});
+});
+
+QUnit.test('cxl.Binding server validation error', function(a) {
+var
+	done = a.async(),
+	el = $('<input type="text">'),
+	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/validate') })
+;
+	el.val('string is too long').change();
+
+	b.on('error', function(err) {
+		a.ok(err);
+		a.equal(err.code, 'PERMISSION_DENIED');
+		a.ok(b.value !== 'string is too long');
+		b.unbind();
+		done();
+	});
+});
+
+QUnit.test('cxl.Binding server validation error', function(a) {
+var
+	done = a.async(),
+	el = $('<input type="text">'),
+	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/validate') })
+;
+	b.on('error', function(err) {
+		a.ok(err);
+		a.equal(err.code, 'PERMISSION_DENIED');
+		a.ok(b.value !== 'string is too long');
+		b.unbind();
+		done();
+	});
+
+	el.val('string is too long').change();
+});
+
+QUnit.test('cxl.Binding client validation error', function(a) {
+var
+	done = a.async(),
+	el = $('<input type="text">'),
+	b = cxl.bind({
+		el: el,
+		ref: fb.child('cxl-binding/validate'),
+		validate: cxl.validator({ maxlength: 10 })
+	})
+;
+	b.on('error', function(err) {
+		a.ok(err);
+		a.equal(err.validator, 'maxlength');
+		a.equal(err.code, 'PERMISSION_DENIED');
+		a.ok(b.value !== 'string is too long');
+		b.unbind();
+		done();
+	});
+
+	el.val('string is too long').change();
 });
 
 })();
