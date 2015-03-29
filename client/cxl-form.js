@@ -7,20 +7,6 @@ Backbone.Validation.configure({
 	forceUpdate: true
 });
 
-_.extend(Backbone.Validation.validators, {
-
-	json: function(value)
-	{
-		try {
-			if (value!=="")
-				JSON.parse(value);
-		} catch(e) {
-			return 'Invalid JSON: ' + e.toString();
-		}
-	}
-
-});
-
 _.extend(Backbone.Model.prototype, Backbone.Validation.mixin);
 
 cxl.Field = Backbone.View.extend({

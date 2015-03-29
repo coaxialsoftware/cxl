@@ -163,7 +163,7 @@ module.exports = function(grunt) {
 					{ src: 'test/client/*.js' }
 				],
 				preprocessors: {
-					'src/**/*.js': [ 'coverage' ]
+					'client/**/*.js': [ 'coverage' ]
 				}
 			}
 		}
