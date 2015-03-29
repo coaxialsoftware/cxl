@@ -188,9 +188,24 @@ cxl.Validators = {
 		return _.isNumber(value) && (value <= max);
 	},
 
+	min: function(value, min)
+	{
+		return _.isNumber(value) && (value >= min);
+	},
+
 	maxlength: function(value, max)
 	{
 		return value && _.has(value, 'length') && value.length<=max;
+	},
+
+	minlength: function(value, min)
+	{
+		return value && _.has(value, 'length') && value.length>=min;
+	},
+
+	pattern: function(value, regex)
+	{
+		return regex.test(value);
 	}
 
 };
