@@ -158,7 +158,7 @@ var
 	b = cxl.bind({
 		el: el,
 		ref: fb.child('cxl-binding/validate'),
-		validate: cxl.validator({ maxlength: 10 })
+		validate: { minlength: 0, maxlength: 10 }
 	})
 ;
 	b.on('error', function(err) {
@@ -171,6 +171,103 @@ var
 	});
 
 	el.val('string is too long').change();
+});
+
+QUnit.test('cxl.Validators.required', function(a) {
+var
+	done = a.async(),
+	el = $('<input type="text">'),
+	b = cxl.bind({
+		el: el,
+		ref: fb.child('cxl-binding/validate'),
+		validate: { required: true }
+	})
+;
+	b.on('error', function(err) {
+		a.ok(err);
+		a.equal(err.validator, 'required');
+		a.equal(err.code, 'PERMISSION_DENIED');
+		a.ok(b.value !== 'string is too long');
+		b.unbind();
+		done();
+	});
+
+	el.val('').change();
+});
+
+QUnit.test('cxl.Validators.max and min', function(a) {
+var
+	done = a.async(),
+	el = $('<input type="text">'),
+	b = cxl.bind({
+		el: el,
+		ref: fb.child('cxl-binding/validate'),
+		validate: { min: 5, max: 10 }
+	})
+;
+	b.on('error', function(err) {
+		a.ok(err);
+		a.equal(err.validator, 'max');
+		a.equal(err.code, 'PERMISSION_DENIED');
+		a.ok(b.value !== '12');
+		b.unbind();
+		done();
+	});
+
+	el.val('12').change();
+});
+
+QUnit.test('cxl.Validators.pattern', function(a) {
+var
+	done = a.async(),
+	el = $('<input type="text">'),
+	b = cxl.bind({
+		el: el,
+		ref: fb.child('cxl-binding/validate'),
+		validate: { pattern: /\w\d/ }
+	})
+;
+	b.on('sync', function() {
+		a.equal(b.value, 'd3');
+		el.val('invalid').change();
+	});
+	b.on('error', function(err) {
+		a.ok(err);
+		a.equal(err.validator, 'pattern');
+		a.equal(err.code, 'PERMISSION_DENIED');
+		a.ok(b.value !== 'invalid');
+		b.unbind();
+		done();
+	});
+
+	el.val('d3').change();
+
+});
+
+QUnit.test('cxl.Validators.json', function(a) {
+var
+	done = a.async(),
+	el = $('<input type="text">'),
+	b = cxl.bind({
+		el: el,
+		ref: fb.child('cxl-binding/validate'),
+		validate: { json: true }
+	})
+;
+	b.on('sync', function() {
+		a.equal(b.value, '"json"');
+		el.val('{ notjson }').change();
+	});
+	b.on('error', function(err) {
+		a.ok(err);
+		a.equal(err.validator, 'json');
+		a.equal(err.code, 'PERMISSION_DENIED');
+		a.ok(b.value !== '{ notjson }');
+		b.unbind();
+		done();
+	});
+
+	el.val('"json"').change();
 });
 
 })();

@@ -14,7 +14,8 @@ cxl.Binding = function(options)
 {
 	this.el = $(options.el);
 	this.ref = options.ref;
-	this.validate = options.validate;
+	this.validate = _.isFunction(options.validate) ?
+		options.validate : cxl.validator(options.validate);
 
 	this._onComplete = this.onComplete.bind(this);
 	this.setViewHandlers();
@@ -71,7 +72,9 @@ _.extend(cxl.Binding.prototype, Backbone.Events, {
 	viewValue: null,
 
 	/**
-	 * Validator Function
+	 * Validator Function. If an object is passed it will
+	 * be passed to cxl.validator() and the resulting function
+	 * will be used.
 	 */
 	validate: null,
 
@@ -157,13 +160,6 @@ cxl.validator = function(op)
 	};
 };
 
-cxl.Validation = {
-
-	Messages: {
-		json: 'Invalid JSON.',
-		required: 'Field is required'
-	}
-};
 
 cxl.Validators = {
 
@@ -185,12 +181,12 @@ cxl.Validators = {
 
 	max: function(value, max)
 	{
-		return _.isNumber(value) && (value <= max);
+		return +value <= max;
 	},
 
 	min: function(value, min)
 	{
-		return _.isNumber(value) && (value >= min);
+		return +value >= min;
 	},
 
 	maxlength: function(value, max)
