@@ -81,7 +81,7 @@ _.extend(cxl, {
 		return cxl;
 	},
 
-	// Creates a template
+	// Loads a template
 	template: function(id)
 	{
 		var html;
@@ -145,13 +145,9 @@ cxl.View = Backbone.View.extend({
 				view.resolve = resolved;
 
 		    view.initialize.apply(view, args);
-
-			if (view.templateUrl)
-				view.template = cxl.template(view.templateUrl);
-			else if (typeof(view.template) === 'string')
-				view.template = _.template(view.template);
-
-			view.compile();
+		    view.loadTemplate(view);
+		    view.delegateEvents();
+			view.render(view.$el);
 		}
 
 		if (resolve)
@@ -160,13 +156,15 @@ cxl.View = Backbone.View.extend({
 			load();
 	},
 
-	compile: function()
+	loadTemplate: function(view)
 	{
-		if (this.template)
-			this.$el.html(this.template(this));
+		if (view.templateUrl)
+			view.template = cxl.template(view.templateUrl);
+		else if (typeof(view.template) === 'string')
+			view.template = _.template(view.template);
 
-	    view.delegateEvents();
-		view.render(this.$el);
+		if (view.template)
+			view.$el.html(view.template(view));
 	}
 
 }, {
