@@ -37,8 +37,7 @@ $(function() {
 		$window: $(window),
 		$doc: $(document),
 		$content: $content,
-		router: new cxl.Router({ $content: $content }),
-		loginRoute: '/login'
+		router: new cxl.Router({ $content: $content })
 	});
 
 	// Autoload modules
@@ -46,28 +45,17 @@ $(function() {
 		cxl.include(this.getAttribute('cxl'));
 	}).addClass('cxl-ready');
 
-
-	/**
-	 * Handle forbidden ajax requests.
-	 *
-	 * If there a "/login" route it will automatically redirect.
-	 */
-	$(document).ajaxError(function() {
-		if (arguments[3]==='Forbidden')
-		{
-			if (cxl.router.routes[cxl.loginRoute])
-				cxl.go(cxl.loginRoute);
-		}
-	});
-
 });
 
 /* Utilities */
 _.extend(cxl, {
 
-	error: function(msg)
+	/**
+	 * Throws an error.
+	 */
+	error: function(msg, module)
 	{
-		window.console.error(msg);
+		throw new Error('[' + (module||'cxl') + '] ' + msg);
 	},
 
 	go: function(path)
@@ -82,7 +70,7 @@ _.extend(cxl, {
 		var m = __modules[module];
 
 		if (!m)
-			throw new Error('Module "' + module + '" not found.');
+			this.error('Module "' + module + '" not found.');
 
 		return m.start();
 	},
@@ -163,11 +151,7 @@ cxl.View = Backbone.View.extend({
 			else if (typeof(view.template) === 'string')
 				view.template = _.template(view.template);
 
-			if (view.template)
-				view.compile();
-
-		    view.delegateEvents();
-			view.render();
+			view.compile();
 		}
 
 		if (resolve)
@@ -178,7 +162,11 @@ cxl.View = Backbone.View.extend({
 
 	compile: function()
 	{
-		this.$el.html(this.template(this));
+		if (this.template)
+			this.$el.html(this.template(this));
+
+	    view.delegateEvents();
+		view.render(this.$el);
 	}
 
 }, {
@@ -366,7 +354,7 @@ _.extend(cxl.Module.prototype, {
 			_.each(this.__views, this.__loadView, this);
 			_.invoke(this.__routes, 'call', this);
 
-			_.invoke(this.__run, 'call', this);
+			_.invoke(this.__run, 'call', this, this);
 
 			delete this.__config;
 			delete this.__run;

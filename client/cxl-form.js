@@ -3,11 +3,13 @@
 (function(cxl, Backbone, _, $) {
 "use strict";
 
+/*
 Backbone.Validation.configure({
 	forceUpdate: true
 });
 
 _.extend(Backbone.Model.prototype, Backbone.Validation.mixin);
+*/
 
 cxl.Field = Backbone.View.extend({
 
