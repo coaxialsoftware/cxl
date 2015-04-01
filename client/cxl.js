@@ -37,7 +37,8 @@ $(function() {
 		$window: $(window),
 		$doc: $(document),
 		$content: $content,
-		router: new cxl.Router({ $content: $content })
+		router: new cxl.Router({ $content: $content }),
+		history: Backbone.history
 	});
 
 	// Autoload modules
@@ -115,16 +116,11 @@ _.extend(cxl, {
 
 cxl.View = Backbone.View.extend({
 
-	name: null,
-
 	/// Owner module
 	module: null,
 
 	/// Template Id
 	templateUrl: null,
-
-	/// Current Value
-	value: null,
 
 	/**
 	 * Enable binding. Can be a Firebase ref or a cxl.Binding object.
@@ -154,8 +150,17 @@ cxl.View = Backbone.View.extend({
 				view.resolve = resolved;
 
 		    view.initialize.apply(view, args);
-		    view.loadTemplate(view);
+
+			if (view.templateUrl)
+				view.template = cxl.template(view.templateUrl);
+			else if (typeof(view.template) === 'string')
+				view.template = _.template(view.template);
+
+			if (view.template)
+			    view.loadTemplate(view.template);
+
 		    view.delegateEvents();
+		    view.$el.on('change', view.onChange);
 
 		    if (view.bind)
 			    view.loadBind(view.bind);
@@ -169,6 +174,11 @@ cxl.View = Backbone.View.extend({
 			load();
 	},
 
+	onChange: function(ev)
+	{
+		this.trigger('change', ev);
+	},
+
 	loadBind: function(bind)
 	{
 		if (!$.isPlainObject(bind))
@@ -178,15 +188,9 @@ cxl.View = Backbone.View.extend({
 		this.bind = new cxl.Binding(bind);
 	},
 
-	loadTemplate: function(view)
+	loadTemplate: function(template)
 	{
-		if (view.templateUrl)
-			view.template = cxl.template(view.templateUrl);
-		else if (typeof(view.template) === 'string')
-			view.template = _.template(view.template);
-
-		if (view.template)
-			view.$el.html(view.template(view));
+		this.$el.html(template(this));
 	},
 
 	/**
@@ -194,15 +198,7 @@ cxl.View = Backbone.View.extend({
 	 */
 	val: function(value)
 	{
-		if (arguments.length>0 && (value !== this.value))
-		{
-			this.value = value;
-			this.$el.val(value);
-			this.trigger('change', value);
-		} else
-			return this.$el.val();
-
-		return this;
+		return arguments.length>0 ? (this.$el.val(value),this) : this.$el.val();
 	}
 
 }, {
@@ -359,8 +355,7 @@ _.extend(cxl.Module.prototype, {
 			else
 			{
 				options = _.extend({
-					module: this,
-					path: path
+					module: this
 				}, def);
 				view = cxl.View.extend(options);
 			}
@@ -416,7 +411,6 @@ _.extend(cxl.Module.prototype, {
 	__loadView: function(fn, name)
 	{
 		this.__views[name] = cxl.View.extend(_.extend({
-			name: name,
 			module: this
 		}, fn.call(this)));
 	}

@@ -52,18 +52,38 @@ cxl.Field = cxl.View.extend({
 
 cxl.List = cxl.View.extend({
 
-	itemTemplate: null,
+	initialize: function()
+	{
+		var html = this.$el.html();
+
+		if (html)
+		{
+			this.$el.empty();
+			this.template = cxl.template(html);
+		}
+	},
 
 	render: function()
 	{
 		this.on('add', this.onAdd, this);
 		this.on('remove', this.onRemove, this);
 		this.on('move', this.onMove, this);
+		this.on('sync', this.onSync, this);
 	},
 
-	onAdd: function()
+	loadTemplate: function()
 	{
+	},
 
+	onSync: function()
+	{
+		window.console.log(this.bind.value);
+	},
+
+	onAdd: function(snap)
+	{
+		var item = this.template(snap.ref());
+		this.$el.append(item);
 	},
 
 	onRemove: function()

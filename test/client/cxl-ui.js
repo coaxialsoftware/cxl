@@ -13,8 +13,8 @@ var
 		bind: fb.child('text')
 	})
 ;
-	field.on('change', function(val) {
-		a.equal(val, 'Free Text Value');
+	field.on('sync', function() {
+		a.equal(field.bind.value, 'Free Text Value');
 		a.ok(!field.empty);
 		done();
 	});
@@ -43,8 +43,8 @@ var
 		bind: fb.child('empty')
 	})
 ;
-	field.on('change', function(val) {
-		a.equal(val, '');
+	field.on('sync', function() {
+		a.equal(field.bind.value, '');
 		a.ok(field.empty);
 		done();
 	});

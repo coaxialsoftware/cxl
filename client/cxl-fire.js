@@ -240,5 +240,25 @@ cxl.Validators = {
 
 };
 
+/**
+ * Supported tags:
+ *
+ * cxl-view   Initializes a cxl.View, parameters passed in data
+ *            attributes.
+ * cxl-bind   Creates a cxl.Binding object
+ *            [type:]ref or @attr:ref
+ *
+ */
+cxl.template = function cxlTemplate(content)
+{
+	return function()
+	{
+	var
+		container = document.createElement('DIV')
+	;
+		return container;
+	};
+};
+
 
 })(this.cxl, this._);
