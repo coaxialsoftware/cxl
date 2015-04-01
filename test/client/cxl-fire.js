@@ -16,7 +16,7 @@ var
 	a.ok(b);
 	a.equal(el.val(), '');
 
-	b.on('sync', function() {
+	el.on('sync', function() {
 		a.equal(el.val(), 'string');
 		b.unbind();
 		done();
@@ -32,7 +32,7 @@ var
 	a.equal(b.setViewValue, cxl.Binding.setView.checkbox);
 	a.equal(el.prop('checked'), false);
 
-	b.on('sync', function() {
+	el.on('sync', function() {
 		a.equal(el.prop('checked'), true);
 		b.unbind();
 		done();
@@ -46,7 +46,7 @@ var
 	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/var') }),
 	count = 0
 ;
-	b.on('sync', function() {
+	el.on('sync', function() {
 		if (count++===0)
 		{
 			a.equal(b.value, 'world');
@@ -73,7 +73,7 @@ var
 	a.equal(b.getViewValue, cxl.Binding.getView.checkbox);
 	a.equal(el.prop('checked'), false);
 
-	b.on('sync', function() {
+	el.on('sync', function() {
 		if (count++===0)
 		{
 			a.equal(b.value, 'hello');
@@ -106,15 +106,17 @@ var
 	el = $('<input type="checkbox">'),
 	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/bool') })
 ;
+	el.on('sync', function(ev, err) {
+		if (err)
+		{
+			a.equal(err.code, 'PERMISSION_DENIED');
+			a.equal(el.prop('checked'), true);
+			b.unbind();
+			done();
+		}
+	});
+
 	el.prop('checked', false).change();
-
-	b.on('error', function(err) {
-		a.ok(err);
-		a.equal(err.code, 'PERMISSION_DENIED');
-		a.equal(el.prop('checked'), true);
-		b.unbind();
-		done();
-	});
 });
 
 QUnit.test('cxl.Binding server validation error', function(a) {
@@ -123,15 +125,17 @@ var
 	el = $('<input type="text">'),
 	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/validate') })
 ;
+	el.on('sync', function(ev, err) {
+		if (err)
+		{
+			a.equal(err.code, 'PERMISSION_DENIED');
+			a.ok(b.value !== 'string is too long');
+			b.unbind();
+			done();
+		}
+	});
+
 	el.val('string is too long').change();
-
-	b.on('error', function(err) {
-		a.ok(err);
-		a.equal(err.code, 'PERMISSION_DENIED');
-		a.ok(b.value !== 'string is too long');
-		b.unbind();
-		done();
-	});
 });
 
 QUnit.test('cxl.Binding server validation error', function(a) {
@@ -140,12 +144,14 @@ var
 	el = $('<input type="text">'),
 	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/validate') })
 ;
-	b.on('error', function(err) {
-		a.ok(err);
-		a.equal(err.code, 'PERMISSION_DENIED');
-		a.ok(b.value !== 'string is too long');
-		b.unbind();
-		done();
+	el.on('sync', function(ev, err) {
+		if (err)
+		{
+			a.equal(err.code, 'PERMISSION_DENIED');
+			a.ok(b.value !== 'string is too long');
+			b.unbind();
+			done();
+		}
 	});
 
 	el.val('string is too long').change();
@@ -161,13 +167,15 @@ var
 		validate: { minlength: 0, maxlength: 10 }
 	})
 ;
-	b.on('error', function(err) {
-		a.ok(err);
-		a.equal(err.validator, 'maxlength');
-		a.equal(err.code, 'PERMISSION_DENIED');
-		a.ok(b.value !== 'string is too long');
-		b.unbind();
-		done();
+	el.on('sync', function(ev, err) {
+		if (err)
+		{
+			a.equal(err.validator, 'maxlength');
+			a.equal(err.code, 'PERMISSION_DENIED');
+			a.ok(b.value !== 'string is too long');
+			b.unbind();
+			done();
+		}
 	});
 
 	el.val('string is too long').change();
@@ -183,13 +191,16 @@ var
 		validate: { required: true }
 	})
 ;
-	b.on('error', function(err) {
-		a.ok(err);
-		a.equal(err.validator, 'required');
-		a.equal(err.code, 'PERMISSION_DENIED');
-		a.ok(b.value !== 'string is too long');
-		b.unbind();
-		done();
+	el.on('sync', function(ev, err) {
+		if (err)
+		{
+			a.ok(err);
+			a.equal(err.validator, 'required');
+			a.equal(err.code, 'PERMISSION_DENIED');
+			a.ok(b.value !== 'string is too long');
+			b.unbind();
+			done();
+		}
 	});
 
 	el.val('').change();
@@ -205,7 +216,7 @@ var
 		validate: { min: 5, max: 10 }
 	})
 ;
-	b.on('error', function(err) {
+	el.on('sync', function(ev, err) {
 		a.ok(err);
 		a.equal(err.validator, 'max');
 		a.equal(err.code, 'PERMISSION_DENIED');
@@ -227,17 +238,19 @@ var
 		validate: { pattern: /\w\d/ }
 	})
 ;
-	b.on('sync', function() {
-		a.equal(b.value, 'd3');
-		el.val('invalid').change();
-	});
-	b.on('error', function(err) {
-		a.ok(err);
-		a.equal(err.validator, 'pattern');
-		a.equal(err.code, 'PERMISSION_DENIED');
-		a.ok(b.value !== 'invalid');
-		b.unbind();
-		done();
+	el.on('sync', function(ev, err) {
+		if (!err)
+		{
+			a.equal(b.value, 'd3');
+			el.val('invalid').change();
+		} else {
+			a.ok(err);
+			a.equal(err.validator, 'pattern');
+			a.equal(err.code, 'PERMISSION_DENIED');
+			a.ok(b.value !== 'invalid');
+			b.unbind();
+			done();
+		}
 	});
 
 	el.val('d3').change();
@@ -254,17 +267,20 @@ var
 		validate: { json: true }
 	})
 ;
-	b.on('sync', function() {
-		a.equal(b.value, '"json"');
-		el.val('{ notjson }').change();
-	});
-	b.on('error', function(err) {
-		a.ok(err);
-		a.equal(err.validator, 'json');
-		a.equal(err.code, 'PERMISSION_DENIED');
-		a.ok(b.value !== '{ notjson }');
-		b.unbind();
-		done();
+	el.on('sync', function(ev, err) {
+		if (!err)
+		{
+			a.equal(b.value, '"json"');
+			el.val('{ notjson }').change();
+		} else
+		{
+			a.ok(err);
+			a.equal(err.validator, 'json');
+			a.equal(err.code, 'PERMISSION_DENIED');
+			a.ok(b.value !== '{ notjson }');
+			b.unbind();
+			done();
+		}
 	});
 
 	el.val('"json"').change();

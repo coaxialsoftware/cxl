@@ -1,17 +1,9 @@
 
 
-(function(cxl, Backbone, _, $) {
+(function(cxl, _, $) {
 "use strict";
 
-/*
-Backbone.Validation.configure({
-	forceUpdate: true
-});
-
-_.extend(Backbone.Model.prototype, Backbone.Validation.mixin);
-*/
-
-cxl.Field = Backbone.View.extend({
+cxl.Field = cxl.View.extend({
 
 	$label: null,
 	$group: null,
@@ -20,45 +12,31 @@ cxl.Field = Backbone.View.extend({
 	valid: true,
 	empty: null,
 
-	update: function()
+	onChange: function(err)
 	{
-	var
-		val = this.binding && this.binding.value || this.$el.val(),
-		empty = _.isEmpty(val)
-	;
+		var empty = _.isEmpty(this.bind.value);
+
 		if (this.empty !== empty)
 		{
 			this.empty = empty;
 			this.$group.toggleClass('cxl-empty', empty);
 		}
+
+		this.setValidity(!err, err);
 	},
 
-	setValid: function()
+	setValidity: function(valid, error)
 	{
-		if (this.valid)
+		if (this.valid === valid)
 			return;
 
-		this.$group.removeClass('has-error');
-		this.valid = true;
+		this.valid = valid;
+		this.$group[valid ? 'removeClass':'addClass']('has-error');
+		this.$error.html(error || '');
 	},
 
-	setInvalid: function(errors)
+	render: function()
 	{
-		if (!this.valid)
-			return;
-
-		var error = typeof(errors)==='string' ? errors : errors[0];
-
-		this.$group.addClass('has-error');
-		this.$error.html(error);
-
-		this.valid = false;
-	},
-
-	constructor: function(options)
-	{
-		Backbone.View.apply(this, arguments);
-
 		this.$group = this.$el.parents('.form-group');
 		this.$label = this.$group.find('label');
 		this.$error = this.$group.find('.error-block');
@@ -67,24 +45,41 @@ cxl.Field = Backbone.View.extend({
 			this.$error = $('<span class="help-block error-block">')
 				.appendTo(this.$group);
 
-		this.name = options.name;
-
-		if (this.name)
-		{
-			this.model = options.model;
-			this.binding = new cxl.Binding({
-				el: this.$el,
-				model: this.model,
-				attribute: this.name
-			});
-		}
-
-		this.update();
+		this.on('sync', this.onChange, this);
 	}
 
 });
 
-cxl.Form = Backbone.View.extend({
+cxl.List = cxl.View.extend({
+
+	itemTemplate: null,
+
+	render: function()
+	{
+		this.on('add', this.onAdd, this);
+		this.on('remove', this.onRemove, this);
+		this.on('move', this.onMove, this);
+	},
+
+	onAdd: function()
+	{
+
+	},
+
+	onRemove: function()
+	{
+
+	},
+
+	onMove: function()
+	{
+
+	}
+
+});
+
+/*
+cxl.Form = cxl.View.extend({
 
 	model: null,
 	fields: null,
@@ -152,6 +147,7 @@ cxl.Form = Backbone.View.extend({
 	}
 
 });
+*/
 
 
-})(this.cxl, this.Backbone, this._, this.jQuery);
+})(this.cxl, this._, this.jQuery, this.Firebase);

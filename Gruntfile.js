@@ -6,7 +6,7 @@ module.exports = function(grunt) {
 		server: grunt.file.readJSON('package.json'),
 
 		src: {
-			client: [ 'client/cxl.js', 'client/cxl-fire.js', 'client/cxl-form.js' ]
+			client: [ 'client/cxl.js', 'client/cxl-fire.js', 'client/cxl-ui.js' ]
 		},
 
 		clean: {

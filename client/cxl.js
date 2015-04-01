@@ -123,6 +123,14 @@ cxl.View = Backbone.View.extend({
 	/// Template Id
 	templateUrl: null,
 
+	/// Current Value
+	value: null,
+
+	/**
+	 * Enable binding. Can be a Firebase ref or a cxl.Binding object.
+	 */
+	bind: null,
+
 	resolve: null,
 
 	constructor: function cxlView(options)
@@ -130,7 +138,8 @@ cxl.View = Backbone.View.extend({
 	var
 		view = this,
 		args = options && options.parameters,
-		resolve = view.resolve || view.module.resolve
+		// TODO remove module resolve
+		resolve = view.resolve || (view.module && view.module.resolve)
 	;
 	    view.cid = _.uniqueId('view');
 	    _.extend(view, options);
@@ -147,6 +156,10 @@ cxl.View = Backbone.View.extend({
 		    view.initialize.apply(view, args);
 		    view.loadTemplate(view);
 		    view.delegateEvents();
+
+		    if (view.bind)
+			    view.loadBind(view.bind);
+
 			view.render(view.$el);
 		}
 
@@ -154,6 +167,15 @@ cxl.View = Backbone.View.extend({
 			cxl.resolve(resolve, view).then(load);
 		else
 			load();
+	},
+
+	loadBind: function(bind)
+	{
+		if (!$.isPlainObject(bind))
+			bind = { ref: bind };
+
+		bind.el = this;
+		this.bind = new cxl.Binding(bind);
 	},
 
 	loadTemplate: function(view)
@@ -165,6 +187,22 @@ cxl.View = Backbone.View.extend({
 
 		if (view.template)
 			view.$el.html(view.template(view));
+	},
+
+	/**
+	 * Set value of view. By default it will set the $el.val
+	 */
+	val: function(value)
+	{
+		if (arguments.length>0 && (value !== this.value))
+		{
+			this.value = value;
+			this.$el.val(value);
+			this.trigger('change', value);
+		} else
+			return this.$el.val();
+
+		return this;
 	}
 
 }, {
@@ -278,6 +316,11 @@ _.extend(cxl.Module.prototype, {
 	__includes: null,
 	__routes: null,
 	__models: null,
+
+	extend: function(op)
+	{
+		return _.extend(this, op);
+	},
 
 	run: function(fn)
 	{

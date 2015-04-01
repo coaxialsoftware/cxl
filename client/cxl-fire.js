@@ -1,18 +1,19 @@
 
-(function(cxl, _, $, Backbone) {
+(function(cxl, _) {
 
 /**
  * Two way Binding for firebase objects.
  *
  * options:
  *
- * el   DOM element or jQuery selector
+ * el   jQuery element
  * ref  Firebase reference
+ * validate Validation function or cxl.validate configuration object.
  *
  */
 cxl.Binding = function(options)
 {
-	this.el = $(options.el);
+	this.el = options.el;
 	this.ref = options.ref;
 	this.validate = _.isFunction(options.validate) ?
 		options.validate : cxl.validator(options.validate);
@@ -20,6 +21,9 @@ cxl.Binding = function(options)
 	this._onComplete = this.onComplete.bind(this);
 	this.setViewHandlers();
 	this.bind();
+
+	if (this.el instanceof cxl.View)
+		this.bindContainer();
 };
 
 cxl.bind = function(op)
@@ -49,10 +53,10 @@ _.extend(cxl.Binding, {
 
 });
 
-_.extend(cxl.Binding.prototype, Backbone.Events, {
+_.extend(cxl.Binding.prototype, {
 
 	/**
-	 * DOM element or jQuery selector.
+	 * jQuery element.
 	 */
 	el: null,
 
@@ -81,7 +85,7 @@ _.extend(cxl.Binding.prototype, Backbone.Events, {
 	setViewHandlers: function()
 	{
 	var
-		type = this.el.attr('type')
+		type = this.el instanceof cxl.View ? 'view' : this.el.attr('type')
 	;
 		this.setViewValue = cxl.Binding.setView[
 			type==='checkbox' ? 'checkbox': 'value'
@@ -94,6 +98,9 @@ _.extend(cxl.Binding.prototype, Backbone.Events, {
 	unbind: function()
 	{
 		this.ref.off('value', this.onModelChange, this);
+		this.ref.off('child_added');
+		this.ref.off('child_removed');
+		this.ref.off('child_moved');
 		this.el.off('change', this._ovc);
 	},
 
@@ -104,24 +111,45 @@ _.extend(cxl.Binding.prototype, Backbone.Events, {
 		this.el.on('change input', this._ovc);
 	},
 
+	bindContainer: function()
+	{
+		var el = this.el;
+
+		this.ref.on('child_added', function(snap, prev) {
+			el.trigger('add', snap, prev);
+		});
+
+		this.ref.on('child_removed', function(snap) {
+			el.trigger('remove', snap);
+		});
+
+		this.ref.on('child_moved', function(snap, prev) {
+			el.trigger('move', snap, prev);
+		});
+	},
+
 	onModelChange: function(snapshot)
 	{
 		this.value = snapshot.val();
 		this.setViewValue(this.value);
-		this.trigger('sync');
+		this.sync();
 	},
 
 	onViewChange: function()
 	{
-		var val = this.getViewValue();
+		var val = this.getViewValue(), err;
 
-		if (this.validate && this.validate(val)===false)
-			return;
+		if (this.validate)
+		{
+			err = this.validate(val);
+			if (err)
+				return this.sync(err);
+		}
 
 		if (this.value!==val)
 			this.ref.set(val, this._onComplete);
 		else if (this.viewValue!==val)
-			this.trigger('sync');
+			this.sync();
 
 		this.viewValue=val;
 	},
@@ -132,7 +160,14 @@ _.extend(cxl.Binding.prototype, Backbone.Events, {
 	onComplete: function(err)
 	{
 		if (err)
-			this.trigger('error', err);
+			this.sync(err);
+	},
+
+	sync: function(err)
+	{
+		this.el.trigger("sync", err);
+
+		return this;
 	}
 
 
@@ -150,11 +185,10 @@ cxl.validator = function(op)
 
 			if (fn && fn(val, op[rule])!==true)
 			{
-				this.trigger('error', {
+				return {
 					code: 'PERMISSION_DENIED',
 					validator: rule
-				});
-				return false;
+				};
 			}
 		}
 	};
@@ -207,4 +241,4 @@ cxl.Validators = {
 };
 
 
-})(this.cxl, this._, this.jQuery, this.Backbone);
+})(this.cxl, this._);
