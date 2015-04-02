@@ -3,7 +3,8 @@
 
 var
 	// memoize cxl.template
-	templates = {}
+	templates = {},
+	runTemplate
 ;
 
 /**
@@ -245,27 +246,56 @@ cxl.Validators = {
 
 };
 
+if (cxl.support.template)
+{
+	runTemplate = function(html, dom, view)
+	{
+		dom.innerHTML = html;
+	var
+		content = dom.content,
+		views = content.querySelectorAll('[\\#]'),
+		bind = content.querySelectorAll('[\\@]'),
+		ref = view.ref
+	;
+		window.console.log(views, bind, ref);
+
+		return content;
+	};
+} else
+{
+	runTemplate = function(html, dom, view)
+	{
+		dom.innerHTML = html;
+	var
+		content = dom,
+		views = content.querySelectorAll('[\\#]'),
+		bind = content.querySelectorAll('[\\@]'),
+		ref = view.ref
+	;
+		window.console.log(views, bind, ref);
+
+		return $(dom.children);
+	};
+}
+
 /**
  * Supported tags:
  *
- * cxl-view   Initializes a cxl.View, parameters passed in data
+ * #="view"   Initializes a cxl.View, parameters passed in data
  *            attributes.
- * cxl-bind   Creates a cxl.Binding object
+ * @="ref"    Creates a cxl.Binding object
  *            [type:]ref or @attr:ref
  *
  */
-cxl.template = function cxlTemplate(id)
+cxl.template = function cxlTemplate(id, src)
 {
 	if (templates[id])
 		return templates[id];
-
-	var html = document.getElementById(id).innerHTML;
-
-	return (templates[id] = function()
-	{
-		return $(html);
-	});
+var
+	html = src || document.getElementById(id).innerHTML,
+	dom = document.createElement('TEMPLATE')
+;
+	return (templates[id] = runTemplate.bind(this, html, dom));
 };
-
 
 })(this.cxl, this._, this.jQuery);

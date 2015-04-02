@@ -65,6 +65,14 @@ _.extend(cxl, {
 		return this;
 	},
 
+	/**
+	 * Select node by id
+	 */
+	id: function(id)
+	{
+		return document.getElementById(id);
+	},
+
 	include: function(module)
 	{
 		var m = __modules[module];
@@ -100,56 +108,48 @@ _.extend(cxl, {
 
 });
 
-cxl.View = Backbone.View.extend({
+cxl.support = {
+	template: (function() {
+		var div = document.createElement('template');
+		return !!div.content;
+	})()
+};
 
-	/// Owner module
-	module: null,
+cxl.View = Backbone.View.extend({
 
 	/// Template Id
 	templateUrl: null,
-
-	resolve: null,
 
 	constructor: function cxlView(options)
 	{
 	var
 		view = this,
-		args = options && options.parameters,
-		// TODO remove module resolve
-		resolve = view.resolve || (view.module && view.module.resolve)
+		args = options && options.parameters
 	;
 	    view.cid = _.uniqueId('view');
 	    _.extend(view, options);
 	    view._ensureElement();
+	    view.load(args);
+	},
 
-		if (typeof(resolve)==='function')
-			resolve = resolve.apply(view, args);
+	load: function(args)
+	{
+		var view = this;
 
-		function load(resolved)
-		{
-			if (resolved)
-				view.resolve = resolved;
+	    view.initialize.apply(view, args);
 
-		    view.initialize.apply(view, args);
+		if (view.templateUrl)
+			view.template = cxl.template(view.templateUrl);
+		else if (typeof(view.template) === 'string')
+			view.template = cxl.template(view.cid, view.template);
 
-			if (view.templateUrl)
-				view.template = cxl.template(view.templateUrl);
-			else if (typeof(view.template) === 'string')
-				view.template = _.template(view.template);
+		if (view.template)
+		    view.loadTemplate(view.template);
 
-			if (view.template)
-			    view.loadTemplate(view.template);
+	    view.delegateEvents();
+	    view.$el.on('sync', view.onSync.bind(view));
 
-		    view.delegateEvents();
-		    view.$el.on('sync', view.onSync.bind(view));
-
-			view.render(view.$el);
-		}
-
-		if (resolve)
-			cxl.resolve(resolve, view).then(load);
-		else
-			load();
+		view.render(view.$el);
 	},
 
 	onSync: function(ev, err)
@@ -168,6 +168,29 @@ cxl.View = Backbone.View.extend({
 	{
 		return new this(options);
 	}
+});
+
+cxl.Route = cxl.View.extend({
+
+	load: function(args)
+	{
+	var
+		resolve = this.resolve,
+		load = cxl.View.prototype.load.bind(this, args)
+	;
+		if (typeof(resolve)==='function')
+			resolve = resolve.apply(this, args);
+
+		if (resolve)
+			cxl.resolve(resolve, this).then(function(resolved) {
+				this.resolve = resolved;
+				load();
+			});
+		else
+			load();
+	}
+
+
 });
 
 /**
@@ -308,18 +331,12 @@ _.extend(cxl.Module.prototype, {
 		this.__routes[path] = function() {
 		var
 			def = fn.call(this, this),
-			options,
 			view
 		;
 			if (typeof(def)==='function')
 				view = def.bind(this);
 			else
-			{
-				options = _.extend({
-					module: this
-				}, def);
-				view = cxl.View.extend(options);
-			}
+				view = cxl.Route.extend(def);
 
 			cxl.router.route(path, view);
 		};
@@ -371,9 +388,7 @@ _.extend(cxl.Module.prototype, {
 
 	__loadView: function(fn, name)
 	{
-		this.__views[name] = cxl.View.extend(_.extend({
-			module: this
-		}, fn.call(this)));
+		this.__views[name] = cxl.View.extend(fn.call(this));
 	}
 
 });
