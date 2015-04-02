@@ -6,7 +6,6 @@
 
 var
 	__modules = {},
-	__templates = {},
 
 	createFn = function() { return this; }
 ;
@@ -82,19 +81,6 @@ _.extend(cxl, {
 		return cxl;
 	},
 
-	// Loads a template
-	template: function(id)
-	{
-		var html;
-
-		if (__templates[id])
-			return __templates[id];
-
-		html = document.getElementById(id).innerHTML;
-
-		return (__templates[id] = _.template(html));
-	},
-
 	resolve: function(a)
 	{
 		var promises, keys;
@@ -160,7 +146,7 @@ cxl.View = Backbone.View.extend({
 			    view.loadTemplate(view.template);
 
 		    view.delegateEvents();
-		    view.$el.on('change', view.onChange);
+		    view.$el.on('change', view.onChange.bind(view));
 
 		    if (view.bind)
 			    view.loadBind(view.bind);

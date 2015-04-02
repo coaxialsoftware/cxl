@@ -1,5 +1,10 @@
 
-(function(cxl, _) {
+(function(cxl, _, $) {
+
+var
+	// memoize cxl.template
+	templates = {}
+;
 
 /**
  * Two way Binding for firebase objects.
@@ -249,17 +254,18 @@ cxl.Validators = {
  *            [type:]ref or @attr:ref
  *
  */
-cxl.template = function cxlTemplate(content)
+cxl.template = function cxlTemplate(id)
 {
-	return function()
+	if (templates[id])
+		return templates[id];
+
+	var html = document.getElementById(id).innerHTML;
+
+	return (templates[id] = function()
 	{
-	var
-		container = document.createElement('DIV')
-	;
-		container.innerHTML = content;
-		return container;
-	};
+		return $(html);
+	});
 };
 
 
-})(this.cxl, this._);
+})(this.cxl, this._, this.jQuery);
