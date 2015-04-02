@@ -256,6 +256,7 @@ cxl.template = function cxlTemplate(content)
 	var
 		container = document.createElement('DIV')
 	;
+		container.innerHTML = content;
 		return container;
 	};
 };

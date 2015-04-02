@@ -69,7 +69,7 @@ var
 			done();
 		}
 	});
-	field.val('hello');
+	field.val('hello').trigger('change');
 });
 
 QUnit.test('cxl.Field no bind', function(a) {
@@ -94,7 +94,7 @@ var
 		{
 			a.ok(err);
 			a.equal(err.validator, 'required');
-			field.val('Free Text Value');
+			field.val('Free Text Value').trigger('change');
 		} else
 		{
 			a.ok(!field.$group.hasClass('has-error'));
@@ -102,7 +102,7 @@ var
 		}
 
 	});
-	field.val('');
+	field.val('').trigger('change');
 
 });
 
