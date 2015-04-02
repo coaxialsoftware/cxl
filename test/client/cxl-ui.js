@@ -9,12 +9,12 @@ var	fb = new Firebase('https://cxl-test.firebaseio.com/cxl-ui');
 QUnit.test('cxl.Field text value', function(a) {
 var
 	done = a.async(),
-	field = new cxl.Field({
-		bind: fb.child('text')
-	})
+	el = $('<input>'),
+	field = new cxl.Field({ el: el }),
+	bind = cxl.bind({ el: el, ref: fb.child('text') })
 ;
 	field.on('sync', function() {
-		a.equal(field.bind.value, 'Free Text Value');
+		a.equal(bind.value, 'Free Text Value');
 		a.ok(!field.empty);
 		done();
 	});
@@ -39,12 +39,12 @@ var
 QUnit.test('cxl.Field empty', function(a) {
 var
 	done = a.async(),
-	field = new cxl.Field({
-		bind: fb.child('empty')
-	})
+	el = $('<input>'),
+	field = new cxl.Field({ el: el }),
+	bind = cxl.bind({ el: el, ref: fb.child('empty') })
 ;
 	field.on('sync', function() {
-		a.equal(field.bind.value, '');
+		a.equal(bind.value, '');
 		a.ok(field.empty);
 		done();
 	});
@@ -54,22 +54,22 @@ var
 QUnit.test('cxl.Field manual validation', function(a) {
 var
 	done = a.async(),
-	field = new cxl.Field({
-		bind: {
-			ref: fb.child('empty'),
-			validate: function() { return "ERROR"; }
-		}
+	field = new cxl.Field(),
+	bind = cxl.bind({
+		el: field.$el,
+		ref: fb.child('empty'),
+		validate: function() { return "ERROR"; }
 	})
 ;
 	field.on('sync', function(err) {
 		if (err)
 		{
+			a.ok(!bind.value);
 			a.equal(err, "ERROR");
-			a.ok(field.empty);
 			done();
 		}
 	});
-	field.val('hello').trigger('change');
+	field.$el.val('hello').trigger('change');
 });
 
 QUnit.test('cxl.Field no bind', function(a) {
@@ -82,19 +82,20 @@ var
 QUnit.test('cxl.Field validation required', function(a) {
 var
 	done = a.async(),
-	field = new cxl.Field({
-		bind: {
-			ref: fb.child('text'),
-			validate: { required: true }
-		}
-	})
+	field = new cxl.Field()
 ;
+	cxl.bind({
+		el: field.$el,
+		ref: fb.child('text'),
+		validate: { required: true }
+	});
+
 	field.on('sync', function(err) {
 		if (err)
 		{
 			a.ok(err);
 			a.equal(err.validator, 'required');
-			field.val('Free Text Value').trigger('change');
+			field.$el.val('Free Text Value').trigger('change');
 		} else
 		{
 			a.ok(!field.$group.hasClass('has-error'));
@@ -102,7 +103,7 @@ var
 		}
 
 	});
-	field.val('').trigger('change');
+	field.$el.val('').trigger('change');
 
 });
 

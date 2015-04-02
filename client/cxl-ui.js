@@ -14,7 +14,7 @@ cxl.Field = cxl.View.extend({
 
 	onChange: function(err)
 	{
-		var empty = _.isEmpty(this.bind.value);
+		var empty = _.isEmpty(this.$el.val());
 
 		if (this.empty !== empty)
 		{
