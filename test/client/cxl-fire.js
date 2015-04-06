@@ -11,7 +11,7 @@ QUnit.test('cxl.Binding#constructor', function(a) {
 var
 	done = a.async(),
 	el = $('<INPUT type="text" name="test">'),
-	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/string') })
+	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/string') })
 ;
 	a.ok(b);
 	a.equal(el.val(), '');
@@ -27,7 +27,7 @@ QUnit.test('cxl.Binding#setView checkbox', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="checkbox">'),
-	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/bool') })
+	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/bool') })
 ;
 	a.equal(b.setViewValue, cxl.Binding.setView.checkbox);
 	a.equal(el.prop('checked'), false);
@@ -43,7 +43,7 @@ QUnit.test('cxl.Binding#getView text', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="text">'),
-	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/var') }),
+	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/var') }),
 	count = 0
 ;
 	el.on('sync', function() {
@@ -67,7 +67,7 @@ QUnit.test('cxl.Binding#getView checkbox', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="checkbox">'),
-	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/varbool') }),
+	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/varbool') }),
 	count=0
 ;
 	a.equal(b.getViewValue, cxl.Binding.getView.checkbox);
@@ -94,7 +94,7 @@ var
 QUnit.test('cxl.Binding#unbind', function(a) {
 var
 	el = $('<input type="text">'),
-	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/var') })
+	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/var') })
 ;
 	b.unbind();
 	a.ok(b);
@@ -104,7 +104,7 @@ QUnit.test('cxl.Binding write error', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="checkbox">'),
-	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/bool') })
+	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/bool') })
 ;
 	el.on('sync', function(ev, err) {
 		if (err)
@@ -123,7 +123,7 @@ QUnit.test('cxl.Binding server validation error', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="text">'),
-	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/validate') })
+	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/validate') })
 ;
 	el.on('sync', function(ev, err) {
 		if (err)
@@ -142,7 +142,7 @@ QUnit.test('cxl.Binding server validation error', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="text">'),
-	b = cxl.bind({ el: el, ref: fb.child('cxl-binding/validate') })
+	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/validate') })
 ;
 	el.on('sync', function(ev, err) {
 		if (err)
@@ -161,7 +161,7 @@ QUnit.test('cxl.Binding client validation error', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="text">'),
-	b = cxl.bind({
+	b = cxl.binding({
 		el: el,
 		ref: fb.child('cxl-binding/validate'),
 		validate: { minlength: 0, maxlength: 10 }
@@ -185,7 +185,7 @@ QUnit.test('cxl.Validators.required', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="text">'),
-	b = cxl.bind({
+	b = cxl.binding({
 		el: el,
 		ref: fb.child('cxl-binding/validate'),
 		validate: { required: true }
@@ -210,7 +210,7 @@ QUnit.test('cxl.Validators.max and min', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="text">'),
-	b = cxl.bind({
+	b = cxl.binding({
 		el: el,
 		ref: fb.child('cxl-binding/validate'),
 		validate: { min: 5, max: 10 }
@@ -232,7 +232,7 @@ QUnit.test('cxl.Validators.pattern', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="text">'),
-	b = cxl.bind({
+	b = cxl.binding({
 		el: el,
 		ref: fb.child('cxl-binding/validate'),
 		validate: { pattern: /\w\d/ }
@@ -261,7 +261,7 @@ QUnit.test('cxl.Validators.json', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="text">'),
-	b = cxl.bind({
+	b = cxl.binding({
 		el: el,
 		ref: fb.child('cxl-binding/validate'),
 		validate: { json: true }

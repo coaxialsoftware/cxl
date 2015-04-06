@@ -12,7 +12,7 @@ cxl.Field = cxl.View.extend({
 	valid: true,
 	empty: null,
 
-	onChange: function(err)
+	sync: function(err)
 	{
 		var empty = _.isEmpty(this.$el.val());
 
@@ -44,40 +44,43 @@ cxl.Field = cxl.View.extend({
 		if (!this.$error.length)
 			this.$error = $('<span class="help-block error-block">')
 				.appendTo(this.$group);
-
-		this.on('sync', this.onChange, this);
 	}
 
 });
 
 cxl.List = cxl.View.extend({
 
-	initialize: function()
+	// Item Template
+	template: null,
+
+	load: function()
 	{
 		var html = this.$el.html();
 
 		if (html)
 		{
 			this.$el.empty();
-			this.template = cxl.template(html);
+			this.template = html;
 		}
+
+		cxl.View.prototype.load.apply(this, arguments);
+
+		this.$el.on('add', this.onAdd, this);
+		this.$el.on('remove', this.onRemove, this);
+		this.$el.on('move', this.onMove, this);
 	},
 
-	render: function()
+	loadBinding: function()
 	{
-		this.on('add', this.onAdd, this);
-		this.on('remove', this.onRemove, this);
-		this.on('move', this.onMove, this);
-		this.on('sync', this.onSync, this);
 	},
 
 	loadTemplate: function()
 	{
 	},
 
-	onSync: function()
+	sync: function(err, val)
 	{
-		window.console.log(this.bind.value);
+		window.console.log(err, val);
 	},
 
 	onAdd: function(snap)
@@ -98,76 +101,33 @@ cxl.List = cxl.View.extend({
 
 });
 
-/*
 cxl.Form = cxl.View.extend({
-
-	model: null,
-	fields: null,
-	syncTimeout: 1000,
 
 	events: {
 		'submit': 'onSubmit'
 	},
 
-	initialize: function(options)
+	fields: null,
+
+	bindElement: function(bind)
 	{
-		this.model = options.model;
-		this.fields = {};
-		this.render();
-	},
-
-	bindElement: function(el)
-	{
-	var
-		$el = $(el),
-		name = $el.attr('name')
-	;
-		this.fields[name] = new cxl.Field({
-			el: $el,
-			model: this.model,
-			name: name
-		});
-	},
-
-	onValidated: function(isValid, model, errors)
-	{
-		this.$el.toggleClass('cxl-invalid', !isValid);
-
-		_.each(this.fields, function(field) {
-			field.update();
-
-			if (field.binding)
-			{
-				var err = errors[field.binding.attribute];
-				field[err ? 'setInvalid' : 'setValid'](err);
-			}
-		}, this);
+		this.fields.push(new cxl.Field({
+			el: bind.el
+		}));
 	},
 
 	render: function()
 	{
-		var els = this.el.elements;
-		_.each(els, this.bindElement, this);
-
-		this.model.on('validated', this.onValidated, this);
-		this.model.on('change',
-			_.debounce(this.sync, this.syncTimeout), this);
-	},
-
-	sync: function()
-	{
-		if (this.model.isValid())
-			this.model.save(this.model.changed, { patch: true });
+		this.fields = [];
+		_.each(this.bind, this.bindElement, this);
 	},
 
 	onSubmit: function(ev)
 	{
-		this.sync();
 		ev.preventDefault();
 	}
 
 });
-*/
 
 
 })(this.cxl, this._, this.jQuery, this.Firebase);

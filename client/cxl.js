@@ -120,6 +120,12 @@ cxl.View = Backbone.View.extend({
 	/// Template Id
 	templateUrl: null,
 
+	/// Reference for cxl.Binding
+	ref: null,
+
+	/// Template bindings
+	bind: null,
+
 	constructor: function cxlView(options)
 	{
 	var
@@ -134,17 +140,25 @@ cxl.View = Backbone.View.extend({
 
 	load: function(args)
 	{
-		var view = this;
-
-	    view.initialize.apply(view, args);
+		var view = this, bind;
 
 		if (view.templateUrl)
 			view.template = cxl.template(view.templateUrl);
 		else if (typeof(view.template) === 'string')
 			view.template = cxl.template(view.cid, view.template);
 
+	    view.initialize.apply(view, args);
+
 		if (view.template)
+		{
+			bind = view.$el.data('cxl.bind');
+			view.ref = view.ref || (bind && bind.ref);
+
+		    if (view.ref)
+		    	view.loadBinding(view.ref);
+
 		    view.loadTemplate(view.template);
+		}
 
 	    view.delegateEvents();
 	    view.$el.on('sync', view.onSync.bind(view));
@@ -152,14 +166,20 @@ cxl.View = Backbone.View.extend({
 		view.render(view.$el);
 	},
 
-	onSync: function(ev, err)
+	onSync: function(ev, err, val)
 	{
-		this.trigger('sync', err);
+		if (this.sync) this.sync(err);
+		this.trigger('sync', err, val);
+	},
+
+	loadBinding: function(ref)
+	{
+		cxl.bind(this.template, ref);
 	},
 
 	loadTemplate: function(template)
 	{
-		this.$el.html(template(this));
+		this.$el.html(template);
 	}
 
 }, {

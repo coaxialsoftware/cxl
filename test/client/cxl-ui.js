@@ -11,7 +11,7 @@ var
 	done = a.async(),
 	el = $('<input>'),
 	field = new cxl.Field({ el: el }),
-	bind = cxl.bind({ el: el, ref: fb.child('text') })
+	bind = cxl.binding({ el: el, ref: fb.child('text') })
 ;
 	field.on('sync', function() {
 		a.equal(bind.value, 'Free Text Value');
@@ -27,8 +27,7 @@ var
 		'type="text"></label><span class="error-block">' +
 		'Error</span><div>'),
 	field = new cxl.Field({
-		el: group.find('input'),
-		bind: fb.child('text')
+		el: group.find('input')
 	})
 ;
 	a.ok(field.$group.length);
@@ -41,7 +40,7 @@ var
 	done = a.async(),
 	el = $('<input>'),
 	field = new cxl.Field({ el: el }),
-	bind = cxl.bind({ el: el, ref: fb.child('empty') })
+	bind = cxl.binding({ el: el, ref: fb.child('empty') })
 ;
 	field.on('sync', function() {
 		a.equal(bind.value, '');
@@ -55,7 +54,7 @@ QUnit.test('cxl.Field manual validation', function(a) {
 var
 	done = a.async(),
 	field = new cxl.Field(),
-	bind = cxl.bind({
+	bind = cxl.binding({
 		el: field.$el,
 		ref: fb.child('empty'),
 		validate: function() { return "ERROR"; }
@@ -84,7 +83,7 @@ var
 	done = a.async(),
 	field = new cxl.Field()
 ;
-	cxl.bind({
+	cxl.binding({
 		el: field.$el,
 		ref: fb.child('text'),
 		validate: { required: true }
@@ -105,6 +104,21 @@ var
 	});
 	field.$el.val('').trigger('change');
 
+});
+
+QUnit.test('cxl.List', function(a) {
+var
+	done = a.async(),
+	list = new cxl.List({
+		template: '<span @=""></span>'
+	}),
+	bind = cxl.binding({ el: list.$el, ref: fb })
+;
+	a.ok(list);
+	list.$el.on('sync', function(err, val) {
+		console.log(err, val);
+		done();
+	});
 });
 
 })();

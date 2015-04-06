@@ -4,7 +4,7 @@
 var
 	// memoize cxl.template
 	templates = {},
-	runTemplate
+	bindRegex = /^(@)?([^\s>"'=]:)?(.+)/
 ;
 
 /**
@@ -12,15 +12,20 @@ var
  *
  * options:
  *
- * el   jQuery element
- * ref  Firebase reference
- * validate Validation function or cxl.validate configuration object.
+ * el          jQuery element
+ * ref         Firebase reference
+ * validate    Validation function or cxl.validate configuration object.
+ * type        Type of binding see cxl.Binding.setView and getView.
+ * attribute   attribute name for type "attribute"
  *
  */
 cxl.Binding = function(options)
 {
 	this.el = options.el;
 	this.ref = options.ref;
+	this.type = options.type;
+	this.attribute = options.attribute;
+
 	this.validate = _.isFunction(options.validate) ?
 		options.validate : cxl.validator(options.validate);
 
@@ -30,16 +35,28 @@ cxl.Binding = function(options)
 
 	if (this.el instanceof cxl.View)
 		this.bindContainer();
-};
 
-cxl.bind = function(op)
-{
-	return new cxl.Binding(op);
 };
 
 _.extend(cxl.Binding, {
 
 	setView: {
+		attribute: function(val)
+			{ this.el.attr(this.attribute, val); },
+		'if': function(val)
+		{
+			if (!this.marker)
+			{
+				this.marker = document.createComment('bind');
+				this.el.insertBefore(this.marker);
+			}
+
+			if (val)
+				this.marker.insertAfter(this.el);
+			else
+				this.el.remove();
+		},
+
 		value: function(val) { return this.el.val(val); },
 		checkbox: function(val)
 		{
@@ -49,6 +66,8 @@ _.extend(cxl.Binding, {
 	},
 
 	getView: {
+		attribute: function() { return this.el.attr(this.attribute); },
+		'if': function() { return this.value; },
 		value: function() { return this.el.val(); },
 		checkbox: function()
 		{
@@ -91,14 +110,11 @@ _.extend(cxl.Binding.prototype, {
 	setViewHandlers: function()
 	{
 	var
-		type = this.el instanceof cxl.View ? 'view' : this.el.attr('type')
+		type = this.type ||
+			(this.el.attr('type')==='checkbox' ? 'checkbox' : 'value')
 	;
-		this.setViewValue = cxl.Binding.setView[
-			type==='checkbox' ? 'checkbox': 'value'
-		];
-		this.getViewValue = cxl.Binding.getView[
-			type==='checkbox' ? 'checkbox': 'value'
-		];
+		this.setViewValue = cxl.Binding.setView[type];
+		this.getViewValue = cxl.Binding.getView[type];
 	},
 
 	unbind: function()
@@ -108,6 +124,7 @@ _.extend(cxl.Binding.prototype, {
 		this.ref.off('child_removed');
 		this.ref.off('child_moved');
 		this.el.off('change', this._ovc);
+		this.el.removeData('cxl.bind');
 	},
 
 	bind: function()
@@ -115,6 +132,7 @@ _.extend(cxl.Binding.prototype, {
 		this.ref.on('value', this.onModelChange, this);
 		this._ovc = this.onViewChange.bind(this);
 		this.el.on('change input', this._ovc);
+		this.el.data('cxl.bind', this);
 	},
 
 	bindContainer: function()
@@ -122,7 +140,7 @@ _.extend(cxl.Binding.prototype, {
 		var el = this.el;
 
 		this.ref.on('child_added', function(snap, prev) {
-			el.trigger('add', snap, prev);
+			el.trigger('add', [snap, prev]);
 		});
 
 		this.ref.on('child_removed', function(snap) {
@@ -130,7 +148,7 @@ _.extend(cxl.Binding.prototype, {
 		});
 
 		this.ref.on('child_moved', function(snap, prev) {
-			el.trigger('move', snap, prev);
+			el.trigger('move', [snap, prev]);
 		});
 	},
 
@@ -171,7 +189,7 @@ _.extend(cxl.Binding.prototype, {
 
 	sync: function(err)
 	{
-		this.el.trigger("sync", err);
+		this.el.trigger("sync", [err, this.value]);
 
 		return this;
 	}
@@ -246,56 +264,51 @@ cxl.Validators = {
 
 };
 
-if (cxl.support.template)
-{
-	runTemplate = function(html, dom, view)
-	{
-		dom.innerHTML = html;
-	var
-		content = dom.content,
-		views = content.querySelectorAll('[\\#]'),
-		bind = content.querySelectorAll('[\\@]'),
-		ref = view.ref
-	;
-		window.console.log(views, bind, ref);
-
-		return content;
-	};
-} else
-{
-	runTemplate = function(html, dom, view)
-	{
-		dom.innerHTML = html;
-	var
-		content = dom,
-		views = content.querySelectorAll('[\\#]'),
-		bind = content.querySelectorAll('[\\@]'),
-		ref = view.ref
-	;
-		window.console.log(views, bind, ref);
-
-		return $(dom.children);
-	};
-}
+cxl.binding = function(op) { return new cxl.Binding(op); };
 
 /**
- * Supported tags:
+ * Binds DOM template to a Firebase ref.
  *
- * #="view"   Initializes a cxl.View, parameters passed in data
- *            attributes.
  * @="ref"    Creates a cxl.Binding object
  *            [type:]ref or @attr:ref
- *
+ */
+cxl.bind = function(el, ref)
+{
+	var bindings = [];
+
+	el.find('[\\@]').each(function() {
+	var
+		b = bindRegex.exec(this.getAttribute('@')),
+		type, attr
+	;
+		if (b[1]==='@')
+		{
+			type = 'attribute';
+			attr = b[2];
+		} else
+			type = b[2];
+
+		bindings.push(new cxl.Binding({
+			el: $(this),
+			ref: ref.child(b[3]),
+			type: type,
+			attribute: attr
+		}));
+	});
+
+	return bindings;
+};
+
+/**
+ * Creates a new template.
  */
 cxl.template = function cxlTemplate(id, src)
 {
-	if (templates[id])
-		return templates[id];
 var
-	html = src || document.getElementById(id).innerHTML,
-	dom = document.createElement('TEMPLATE')
+	html = src || templates[id] ||
+		(templates[id]=document.getElementById(id).innerHTML)
 ;
-	return (templates[id] = runTemplate.bind(this, html, dom));
+	return $(html);
 };
 
 })(this.cxl, this._, this.jQuery);
