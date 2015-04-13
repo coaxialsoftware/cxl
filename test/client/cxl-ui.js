@@ -115,8 +115,10 @@ var
 	bind = cxl.binding({ el: list.$el, ref: fb })
 ;
 	a.ok(list);
-	list.$el.on('sync', function(err, val) {
-		console.log(err, val);
+	a.ok(bind);
+	list.$el.on('sync', function(ev, err, val) {
+		a.ok(!err);
+		a.ok(val);
 		done();
 	});
 });

@@ -123,9 +123,6 @@ cxl.View = Backbone.View.extend({
 	/// Reference for cxl.Binding
 	ref: null,
 
-	/// Template bindings
-	bind: null,
-
 	constructor: function cxlView(options)
 	{
 	var
