@@ -286,5 +286,31 @@ var
 	el.val('"json"').change();
 });
 
+QUnit.test('cxl.Template', function(a) {
+var
+	done = a.async(),
+	el = $('<div &="cxl-binding/string"></div>'),
+	tpl = cxl.template(el, fb)
+;
+	el.on('sync', function() {
+		a.equal(el.val(), 'string');
+		tpl.unbind();
+		done();
+	});
+});
+
+QUnit.test('cxl.Template - attribute', function(a) {
+var
+	done = a.async(),
+	el = $('<div &="@test:cxl-binding/string"></div>'),
+	tpl = cxl.template(el, fb)
+;
+	el.on('sync', function() {
+		a.equal(el.attr('test'), 'string');
+		tpl.unbind();
+		done();
+	});
+});
+
 
 })();

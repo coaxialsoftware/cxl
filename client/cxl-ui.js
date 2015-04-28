@@ -119,7 +119,7 @@ cxl.Form = cxl.View.extend({
 	render: function()
 	{
 		this.fields = [];
-		_.each(this.bind, this.bindElement, this);
+		_.each(this.ref, this.bindElement, this);
 	},
 
 	onSubmit: function(ev)

@@ -2,9 +2,8 @@
 (function(cxl, _, $) {
 
 var
-	// memoize cxl.template
-	templates = {},
-	bindRegex = /^(@)?([^\s>"'=]:)?(.+)/
+	bindRegex = /^(@)?(?:([^\s>"'=]+):)?(.+)/,
+	templateDiv = $('<div>')
 ;
 
 /**
@@ -264,51 +263,66 @@ cxl.Validators = {
 
 };
 
-cxl.binding = function(op) { return new cxl.Binding(op); };
 
 /**
  * Binds DOM template to a Firebase ref.
  *
- * @="ref"    Creates a cxl.Binding object
+ * &="ref"    Creates a cxl.Binding object
  *            [type:]ref or @attr:ref
  */
-cxl.bind = function(el, ref)
+cxl.Template = function(el, ref)
 {
-	var bindings = [];
+	this.el = $(el);
+	this.ref = ref;
+	this.bind();
+};
 
-	el.find('[\\@]').each(function() {
+_.extend(cxl.Template.prototype, {
+
+	el: null,
+	ref: null,
+	bindings: null,
+
+	unbind: function()
+	{
+		_.invoke(this.bindings, 'unbind');
+		return this;
+	},
+
+	bind: function()
+	{
 	var
-		b = bindRegex.exec(this.getAttribute('@')),
-		type, attr
+		el = this.el,
+		ref = this.ref,
+		bindings = this.bindings = []
 	;
-		if (b[1]==='@')
-		{
-			type = 'attribute';
-			attr = b[2];
-		} else
-			type = b[2];
+		// TODO optimize this
+		templateDiv.html(el).find('[\\&]').each(function() {
+		var
+			b = bindRegex.exec(this.getAttribute('&')),
+			type, attr
+		;
+			if (b[1]==='@')
+			{
+				type = 'attribute';
+				attr = b[2];
+			} else
+				type = b[2];
 
-		bindings.push(new cxl.Binding({
-			el: $(this),
-			ref: ref.child(b[3]),
-			type: type,
-			attribute: attr
-		}));
-	});
+			bindings.push(new cxl.Binding({
+				el: $(this),
+				ref: ref.child(b[3]),
+				type: type,
+				attribute: attr
+			}));
+		});
 
-	return bindings;
-};
+		return this;
+	}
 
-/**
- * Creates a new template.
- */
-cxl.template = function cxlTemplate(id, src)
-{
-var
-	html = src || templates[id] ||
-		(templates[id]=document.getElementById(id).innerHTML)
-;
-	return $(html);
-};
+});
+
+cxl.binding = function(op) { return new cxl.Binding(op); };
+cxl.template = function(el, ref) { return new cxl.Template(el, ref); };
 
 })(this.cxl, this._, this.jQuery);
