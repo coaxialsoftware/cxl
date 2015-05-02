@@ -289,27 +289,56 @@ var
 QUnit.test('cxl.Template', function(a) {
 var
 	done = a.async(),
-	el = $('<div &="cxl-binding/string"></div>'),
-	tpl = cxl.template(el, fb)
+	el = '<div &="cxl-binding/string"></div>',
+	tpl = cxl.template(el, fb),
+	div = tpl.el.find('div')
 ;
-	el.on('sync', function() {
-		a.equal(el.val(), 'string');
+	div.on('sync', function() {
+		a.equal(div.html(), 'string');
 		tpl.unbind();
 		done();
 	});
 });
 
+QUnit.test('cxl.Template - view', function(a) {
+var
+	View = cxl.view(a.test.testId, cxl.View.extend({ template: 'Hello' })),
+	el = '<div &="#' + a.test.testId + '"></div>',
+	tpl = cxl.template(el),
+	div = tpl.el.find('div')
+;
+	a.ok(View);
+	a.equal(div.html(), 'Hello');
+	tpl.unbind();
+});
+
 QUnit.test('cxl.Template - attribute', function(a) {
 var
 	done = a.async(),
-	el = $('<div &="@test:cxl-binding/string"></div>'),
-	tpl = cxl.template(el, fb)
+	el = '<div &="@test:cxl-binding/string"></div>',
+	tpl = cxl.template(el, fb),
+	div = tpl.el.find('div')
 ;
-	el.on('sync', function() {
-		a.equal(el.attr('test'), 'string');
+	tpl.el.on('sync', function() {
+		a.equal(div.attr('test'), 'string');
 		tpl.unbind();
 		done();
 	});
+});
+
+QUnit.test('cxl.Template - if', function(a) {
+var
+	done = a.async(),
+	el = $('<div><span &="if:cxl-binding/falsy"></span></div>'),
+	span = el.find('span'),
+	tpl = cxl.template(el, fb)
+;
+	span.on('sync', function() {
+		a.equal(el.find('span').length, 0);
+		tpl.unbind();
+		done();
+	});
+
 });
 
 

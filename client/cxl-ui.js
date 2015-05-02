@@ -65,9 +65,9 @@ cxl.List = cxl.View.extend({
 
 		cxl.View.prototype.load.apply(this, arguments);
 
-		this.$el.on('add', this.onAdd, this);
-		this.$el.on('remove', this.onRemove, this);
-		this.$el.on('move', this.onMove, this);
+		this.$el.on('add', this.onAdd.bind(this));
+		this.$el.on('remove', this.onRemove.bind(this));
+		this.$el.on('move', this.onMove.bind(this));
 	},
 
 	loadBinding: function()
@@ -83,10 +83,10 @@ cxl.List = cxl.View.extend({
 		window.console.log(err, val);
 	},
 
-	onAdd: function(snap)
+	onAdd: function(/*snap*/)
 	{
-		var item = this.template(snap.ref());
-		this.$el.append(item);
+		//var item = this.template(snap.ref());
+		//this.$el.append(item);
 	},
 
 	onRemove: function()

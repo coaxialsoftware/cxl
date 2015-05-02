@@ -2,8 +2,7 @@
 (function(cxl, _, $) {
 
 var
-	bindRegex = /^(@)?(?:([^\s>"'=]+):)?(.+)/,
-	templateDiv = $('<div>')
+	bindRegex = /^([#@])?(?:([^\s>"'=]+):)?(.+)/
 ;
 
 /**
@@ -31,10 +30,6 @@ cxl.Binding = function(options)
 	this._onComplete = this.onComplete.bind(this);
 	this.setViewHandlers();
 	this.bind();
-
-	if (this.el instanceof cxl.View)
-		this.bindContainer();
-
 };
 
 _.extend(cxl.Binding, {
@@ -47,15 +42,18 @@ _.extend(cxl.Binding, {
 			if (!this.marker)
 			{
 				this.marker = document.createComment('bind');
-				this.el.insertBefore(this.marker);
+				this.el.before(this.marker);
 			}
 
 			if (val)
 				this.marker.insertAfter(this.el);
 			else
-				this.el.remove();
+				this.el.detach();
 		},
 
+		content: function(val) {
+			this.el.html(val);
+		},
 		value: function(val) { return this.el.val(val); },
 		checkbox: function(val)
 		{
@@ -68,6 +66,9 @@ _.extend(cxl.Binding, {
 		attribute: function() { return this.el.attr(this.attribute); },
 		'if': function() { return this.value; },
 		value: function() { return this.el.val(); },
+		content: function() {
+			return this.value;
+		},
 		checkbox: function()
 		{
 			var val = this.el.attr('value') || true;
@@ -109,8 +110,11 @@ _.extend(cxl.Binding.prototype, {
 	setViewHandlers: function()
 	{
 	var
+		tagName = this.el.prop('tagName'),
 		type = this.type ||
-			(this.el.attr('type')==='checkbox' ? 'checkbox' : 'value')
+			((tagName==='INPUT' || tagName==='TEXTAREA') ?
+				(this.el.attr('type')==='checkbox' ? 'checkbox' : 'value') :
+				'content')
 	;
 		this.setViewValue = cxl.Binding.setView[type];
 		this.getViewValue = cxl.Binding.getView[type];
@@ -132,6 +136,7 @@ _.extend(cxl.Binding.prototype, {
 		this._ovc = this.onViewChange.bind(this);
 		this.el.on('change input', this._ovc);
 		this.el.data('cxl.bind', this);
+		this.bindContainer();
 	},
 
 	bindContainer: function()
@@ -267,14 +272,16 @@ cxl.Validators = {
 /**
  * Binds DOM template to a Firebase ref.
  *
+ * @param el   JQuery Element or selector.
+ * @param ref  Firebase reference to bind template to.
+ *
  * &="ref"    Creates a cxl.Binding object
  *            [type:]ref or @attr:ref
  */
 cxl.Template = function(el, ref)
 {
-	this.el = $(el);
-	this.ref = ref;
-	this.bind();
+	this.el = typeof(el)==='string' ? $('<div>').append(el) : $(el);
+	this.bind(ref);
 };
 
 _.extend(cxl.Template.prototype, {
@@ -289,32 +296,44 @@ _.extend(cxl.Template.prototype, {
 		return this;
 	},
 
-	bind: function()
+	bind: function(ref)
 	{
 	var
-		el = this.el,
-		ref = this.ref,
 		bindings = this.bindings = []
 	;
-		// TODO optimize this
-		templateDiv.html(el).find('[\\&]').each(function() {
-		var
-			b = bindRegex.exec(this.getAttribute('&')),
-			type, attr
-		;
-			if (b[1]==='@')
-			{
-				type = 'attribute';
-				attr = b[2];
-			} else
-				type = b[2];
+		ref = ref ? (this.ref=ref) : this.ref;
 
-			bindings.push(new cxl.Binding({
-				el: $(this),
-				ref: ref.child(b[3]),
-				type: type,
-				attribute: attr
-			}));
+		// TODO optimize this, clean up
+		this.el.find('[\\&]').each(function() {
+		var
+			prop = this.getAttribute('&').split(' '),
+			$el = $(this)
+		;
+			_.each(prop, function(val) {
+				var b = bindRegex.exec(val), type, attr, r;
+
+				r = (ref && b[3]) ? ref.child(b[3]) : ref;
+
+				if (b[1]==='@')
+				{
+					type = 'attribute';
+					attr = b[2];
+				} else if (b[1]==='#')
+				{
+					r = b[2] ? ref.child[b[3]] : ref;
+					cxl.view(b[2] || b[3]).create({ el: $el, ref: r });
+					type = 'value';
+				} else
+					type = b[2];
+
+				if (r)
+					bindings.push(new cxl.Binding({
+						el: $el,
+						ref: r,
+						type: type,
+						attribute: attr
+					}));
+			});
 		});
 
 		return this;
