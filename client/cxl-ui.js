@@ -48,7 +48,9 @@ cxl.Field = cxl.View.extend({
 
 });
 
-cxl.List = cxl.View.extend({
+cxl.view('list', function() {
+
+return {
 
 	// Item Template
 	template: null,
@@ -60,7 +62,7 @@ cxl.List = cxl.View.extend({
 		if (html)
 		{
 			this.$el.empty();
-			this.template = html;
+			this.itemTemplate = html;
 		}
 
 		cxl.View.prototype.load.apply(this, arguments);
@@ -70,34 +72,35 @@ cxl.List = cxl.View.extend({
 		this.$el.on('move', this.onMove.bind(this));
 	},
 
-	loadBinding: function()
-	{
-	},
-
 	loadTemplate: function()
 	{
 	},
 
-	sync: function(err, val)
+	sync: function()
 	{
-		window.console.log(err, val);
+		window.console.log('sync', arguments);
 	},
 
-	onAdd: function(/*snap*/)
+	onAdd: function(ev, snap)
 	{
 		//var item = this.template(snap.ref());
 		//this.$el.append(item);
+		window.console.log('add', arguments);
+		var item = new cxl.Template(this.itemTemplate, snap.ref());
+		this.$el.append(item.el);
 	},
 
 	onRemove: function()
 	{
-
+		window.console.log('remove', arguments);
 	},
 
 	onMove: function()
 	{
-
+		window.console.log('move', arguments);
 	}
+
+};
 
 });
 

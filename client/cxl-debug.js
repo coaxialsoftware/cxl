@@ -51,7 +51,7 @@ override(cxl.Router.prototype, 'route', function(path) {
 });
 
 override(cxl.Router.prototype, 'execute', function(route, args) {
-	if (route.prototype instanceof cxl.View)
+	if (route.prototype instanceof cxl.Route)
 		dbg('Executing route "' + route.prototype.path + '"', args);
 });
 

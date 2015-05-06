@@ -142,5 +142,24 @@ var
 	});
 });
 
+QUnit.module('cxl.Route');
+
+QUnit.test('cxl.Route', function(a) {
+var
+	route = new cxl.Route()
+;
+	a.ok(route);
+});
+
+QUnit.test('cxl.Route#resolve - function', function(a) {
+var
+	route = new cxl.Route({
+		resolve: function() { return { hello: 'world' }}
+	})
+;
+	console.log(route.resolve);
+	a.equal(route.resolve.hello, 'world');
+});
+
 
 })();

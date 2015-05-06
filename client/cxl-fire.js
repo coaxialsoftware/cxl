@@ -41,7 +41,7 @@ _.extend(cxl.Binding, {
 		{
 			if (!this.marker)
 			{
-				this.marker = document.createComment('bind');
+				this.marker = $(document.createComment('bind'));
 				this.el.before(this.marker);
 			}
 
@@ -320,7 +320,7 @@ _.extend(cxl.Template.prototype, {
 					attr = b[2];
 				} else if (b[1]==='#')
 				{
-					r = b[2] ? ref.child[b[3]] : ref;
+					r = b[2] ? ref.child(b[3]) : ref;
 					cxl.view(b[2] || b[3]).create({ el: $el, ref: r });
 					type = 'value';
 				} else

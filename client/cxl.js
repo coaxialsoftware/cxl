@@ -66,6 +66,8 @@ _.extend(Module.prototype, {
 			def = fn.call(this, this),
 			view
 		;
+			def.path = path;
+
 			if (typeof(def)==='function')
 				view = def.bind(this);
 			else
@@ -89,23 +91,26 @@ _.extend(Module.prototype, {
 
 	start: function()
 	{
-		if (!this.started)
+		var me = this;
+
+		if (!me.started)
 		{
-			_.invoke(this.__config, 'call', this);
-			_.each(this.__views, this.__loadView, this);
-			_.invoke(this.__routes, 'call', this);
+			$(function() {
+				_.invoke(me.__config, 'call', me);
+				_.each(me.__views, me.__loadView, me);
+				_.invoke(me.__routes, 'call', me);
 
-			_.invoke(this.__run, 'call', this, this);
+				_.invoke(me.__run, 'call', me, me);
 
-			delete this.__config;
-			delete this.__run;
+				delete me.__config;
+				delete me.__run;
 
-			cxl.router.refresh();
-
-			this.started = true;
+				me.started = true;
+				cxl.router.refresh();
+			});
 		}
 
-		return this;
+		return me;
 	},
 
 	__loadView: function(fn, name)
@@ -134,6 +139,9 @@ $(function() {
 		router: new cxl.Router({ $content: $content }),
 		history: Backbone.history
 	}).start();
+
+	cxl.$body.addClass('cxl-ready');
+
 });
 
 /** @namespace */
@@ -268,15 +276,16 @@ cxl.Route = cxl.View.extend({
 	load: function(args)
 	{
 	var
-		resolve = this.resolve,
-		load = cxl.View.prototype.load.bind(this, args)
+		me = this,
+		resolve = me.resolve,
+		load = cxl.View.prototype.load.bind(me, args)
 	;
 		if (typeof(resolve)==='function')
-			resolve = resolve.apply(this, args);
+			resolve = resolve.apply(me, args);
 
 		if (resolve)
-			cxl.resolve(resolve, this).then(function(resolved) {
-				this.resolve = resolved;
+			cxl.resolve(resolve).then(function(resolved) {
+				me.resolve = resolved;
 				load();
 			});
 		else
@@ -312,7 +321,7 @@ cxl.Router = Backbone.Router.extend({
 
 	execute: function(Callback, args)
 	{
-		if (Callback.prototype instanceof cxl.View)
+		if (Callback.prototype instanceof cxl.Route)
 		{
 			this.$content.children().addClass('leave');
 

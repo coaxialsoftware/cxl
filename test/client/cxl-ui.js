@@ -106,10 +106,10 @@ var
 
 });
 
-QUnit.test('cxl.List', function(a) {
+QUnit.test('list', function(a) {
 var
 	done = a.async(),
-	list = new cxl.List({
+	list = cxl.view('list').create({
 		template: '<span @=""></span>'
 	}),
 	bind = cxl.binding({ el: list.$el, ref: fb })
