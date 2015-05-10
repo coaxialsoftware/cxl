@@ -283,7 +283,7 @@ cxl.Template = function(el, ref)
 };
 
 var
-	bindRegex = /^([#@])?(?:([^\s>"'=]+):)?(.+)/
+	bindRegex = /\s*([#@])?(?:([^\s>"'=]+):)?([^\s]+)/g
 ;
 
 _.extend(cxl.Template.prototype, {
@@ -298,46 +298,63 @@ _.extend(cxl.Template.prototype, {
 		return this;
 	},
 
-	bind: function(ref)
+	bindView: function(bind, name, ref)
+	{
+		bind.ref = ref;
+		var view = cxl.view(name).create({
+			el: bind.el,
+			ref: ref
+		});
+
+		if (view.initializeBind)
+			view.initializeBind(bind);
+		else
+			bind.type = view.bindingType || 'value';
+	},
+
+	bindAttribute: function(bind, name)
+	{
+		bind.type = 'attribute';
+		bind.attribute = name;
+	},
+
+	bindElement: function(el, b)
 	{
 	var
-		bindings = this.bindings = [],
-		fragment = this.el[0]
+		ref = this.ref,
+		bind = {
+			el: el,
+			ref: (ref && b[3]) ? ref.child(b[3]) : ref
+		}
 	;
-		ref = ref ? (this.ref=ref) : this.ref;
+		if (b[1]==='@')
+			this.bindAttribute(bind, b[2]);
+		else if (b[1]==='#')
+			this.bindView(bind, b[2] || b[3], b[2] ? ref.child(b[3]) : ref);
+		else
+			bind.type = b[2];
 
-		// TODO optimize this, clean up
-		_.each(fragment.querySelectorAll('[\\&]'), function(el) {
-		var
-			prop = el.getAttribute('&').split(' '),
-			$el = $(el)
-		;
-			_.each(prop, function(val) {
-				var b = bindRegex.exec(val), type, attr, r, view;
+		if (bind.ref)
+			this.bindings.push(new cxl.Binding(bind));
+	},
 
-				r = (ref && b[3]) ? ref.child(b[3]) : ref;
+	parseBinding: function(el)
+	{
+		var parsed, $el = $(el);
 
-				if (b[1]==='@')
-				{
-					type = 'attribute';
-					attr = b[2];
-				} else if (b[1]==='#')
-				{
-					r = b[2] ? ref.child(b[3]) : ref;
-					view = cxl.view(b[2] || b[3]).create({ el: $el, ref: r });
-					type = view.bindingType || 'value';
-				} else
-					type = b[2];
+		while ((parsed = bindRegex.exec(el.getAttribute('&'))))
+			this.bindElement($el, parsed);
+	},
 
-				if (r)
-					bindings.push(new cxl.Binding({
-						el: $el,
-						ref: r,
-						type: type,
-						attribute: attr
-					}));
-			});
-		});
+	// TODO check bindings property is null
+	bind: function(ref)
+	{
+		this.bindings = [];
+
+		if (ref)
+			this.ref = ref;
+
+		_.each(this.el[0].querySelectorAll('[\\&]'), this.parseBinding, this);
 
 		return this;
 	}
