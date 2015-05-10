@@ -110,7 +110,7 @@ QUnit.test('list', function(a) {
 var
 	done = a.async(),
 	list = cxl.view('list').create({
-		template: '<span @=""></span>'
+		itemTemplate: '<span @=""></span>'
 	}),
 	bind = cxl.binding({ el: list.$el, ref: fb })
 ;
@@ -120,6 +120,7 @@ var
 		a.ok(!err);
 		a.ok(val);
 		done();
+		bind.unbind();
 	});
 });
 

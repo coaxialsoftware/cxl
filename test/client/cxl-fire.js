@@ -317,9 +317,9 @@ var
 	done = a.async(),
 	el = '<div &="@test:cxl-binding/string"></div>',
 	tpl = cxl.template(el, fb),
-	div = tpl.el.find('div')
+	div = tpl.el.children()
 ;
-	tpl.el.on('sync', function() {
+	div.on('sync', function() {
 		a.equal(div.attr('test'), 'string');
 		tpl.unbind();
 		done();

@@ -1,10 +1,6 @@
 
 (function(cxl, _, $) {
 
-var
-	bindRegex = /^([#@])?(?:([^\s>"'=]+):)?(.+)/
-;
-
 /**
  * Two way Binding for firebase objects.
  *
@@ -111,8 +107,7 @@ _.extend(cxl.Binding.prototype, {
 	{
 	var
 		tagName = this.el.prop('tagName'),
-		type = this.type ||
-			((tagName==='INPUT' || tagName==='TEXTAREA') ?
+		type = this.type || (/^INPUT|TEXTAREA|SELECT$/.test(tagName) ?
 				(this.el.attr('type')==='checkbox' ? 'checkbox' : 'value') :
 				'content')
 	;
@@ -280,9 +275,16 @@ cxl.Validators = {
  */
 cxl.Template = function(el, ref)
 {
-	this.el = typeof(el)==='string' ? $('<div>').append(el) : $(el);
+	// TODO OPTIMIZE
+	this.el = typeof(el)==='string' ?
+		$(window.document.createDocumentFragment())
+			.append(_.template(el)(ref)) : $(el);
 	this.bind(ref);
 };
+
+var
+	bindRegex = /^([#@])?(?:([^\s>"'=]+):)?(.+)/
+;
 
 _.extend(cxl.Template.prototype, {
 
@@ -299,18 +301,19 @@ _.extend(cxl.Template.prototype, {
 	bind: function(ref)
 	{
 	var
-		bindings = this.bindings = []
+		bindings = this.bindings = [],
+		fragment = this.el[0]
 	;
 		ref = ref ? (this.ref=ref) : this.ref;
 
 		// TODO optimize this, clean up
-		this.el.find('[\\&]').each(function() {
+		_.each(fragment.querySelectorAll('[\\&]'), function(el) {
 		var
-			prop = this.getAttribute('&').split(' '),
-			$el = $(this)
+			prop = el.getAttribute('&').split(' '),
+			$el = $(el)
 		;
 			_.each(prop, function(val) {
-				var b = bindRegex.exec(val), type, attr, r;
+				var b = bindRegex.exec(val), type, attr, r, view;
 
 				r = (ref && b[3]) ? ref.child(b[3]) : ref;
 
@@ -321,8 +324,8 @@ _.extend(cxl.Template.prototype, {
 				} else if (b[1]==='#')
 				{
 					r = b[2] ? ref.child(b[3]) : ref;
-					cxl.view(b[2] || b[3]).create({ el: $el, ref: r });
-					type = 'value';
+					view = cxl.view(b[2] || b[3]).create({ el: $el, ref: r });
+					type = view.bindingType || 'value';
 				} else
 					type = b[2];
 

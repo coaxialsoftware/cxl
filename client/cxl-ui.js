@@ -48,18 +48,33 @@ cxl.Field = cxl.View.extend({
 
 });
 
+cxl.view('switch', function() {
+
+return {
+
+	bindingType: 'checkbox',
+
+	sync: function(err, val)
+	{
+		this.$el.parent().toggleClass('active', val===true);
+	}
+
+};
+
+});
+
 cxl.view('list', function() {
 
 return {
 
 	// Item Template
-	template: null,
+	itemTemplate: null,
 
 	load: function()
 	{
-		var html = this.$el.html();
+		var html = this.el.innerHTML;
 
-		if (html)
+		if (!this.itemTemplate && html)
 		{
 			this.$el.empty();
 			this.itemTemplate = html;
@@ -72,20 +87,10 @@ return {
 		this.$el.on('move', this.onMove.bind(this));
 	},
 
-	loadTemplate: function()
-	{
-	},
-
-	sync: function()
-	{
-		window.console.log('sync', arguments);
-	},
-
 	onAdd: function(ev, snap)
 	{
 		//var item = this.template(snap.ref());
 		//this.$el.append(item);
-		window.console.log('add', arguments);
 		var item = new cxl.Template(this.itemTemplate, snap.ref());
 		this.$el.append(item.el);
 	},

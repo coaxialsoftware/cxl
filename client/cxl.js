@@ -4,6 +4,11 @@
 (function(window, $, _, Backbone) {
 "use strict";
 
+// Use Mustache templates
+_.templateSettings = {
+  escape: /\{\{(.+?)\}\}/g
+};
+
 function Module(options)
 {
 	_.extend(this, options);
@@ -241,7 +246,7 @@ cxl.View = Backbone.View.extend({
 		if (view.template)
 		    view.loadTemplate(view.template);
 
-	    view.initialize.apply(view, args);
+	    view.initialize.call(view, view.$el, args);
 
 	    if (view.template)
 	    	view.template = cxl.template(view.$el, view.ref);
@@ -254,7 +259,7 @@ cxl.View = Backbone.View.extend({
 
 	onSync: function(ev, err, val)
 	{
-		if (this.sync) this.sync(err);
+		if (this.sync) this.sync(err, val);
 		this.trigger('sync', err, val);
 	},
 

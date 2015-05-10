@@ -154,7 +154,7 @@ var
 QUnit.test('cxl.Route#resolve - function', function(a) {
 var
 	route = new cxl.Route({
-		resolve: function() { return { hello: 'world' }}
+		resolve: function() { return { hello: 'world' }; }
 	})
 ;
 	console.log(route.resolve);
