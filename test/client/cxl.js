@@ -104,12 +104,12 @@ var
 	span = view.$el.find('span')
 ;
 	a.ok(span.length);
-	a.ok(view.template.bindings.length);
+	a.ok(view.template);
 	span.on('sync', function() {
 		a.ok(tpl);
 		a.ok(view.template);
 		a.equal(span.html(), 'string');
-		view.template.unbind();
+		view.destroy();
 		done();
 	});
 });

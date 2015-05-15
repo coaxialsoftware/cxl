@@ -286,16 +286,18 @@ var
 	el.val('"json"').change();
 });
 
-QUnit.test('cxl.Template', function(a) {
+QUnit.test('cxl.TemplateCompiler#compile', function(a) {
 var
 	done = a.async(),
-	el = '<div &="cxl-binding/string"></div>',
-	tpl = cxl.template(el, fb),
-	div = tpl.el.find('div')
+	el = $('<div><div &="cxl-binding/string"></div></div>'),
+	compiled = cxl.compile(el, fb),
+	div = el.children()
 ;
+	a.ok(compiled);
+
 	div.on('sync', function() {
 		a.equal(div.html(), 'string');
-		tpl.unbind();
+		compiled.unbind();
 		done();
 	});
 });
@@ -303,9 +305,9 @@ var
 QUnit.test('cxl.Template - view', function(a) {
 var
 	View = cxl.view(a.test.testId, cxl.View.extend({ template: 'Hello' })),
-	el = '<div &="#' + a.test.testId + '"></div>',
-	tpl = cxl.template(el),
-	div = tpl.el.find('div')
+	el = $('<div><div &="#' + a.test.testId + '"></div></div>'),
+	div = el.children(),
+	tpl = cxl.compile(el)
 ;
 	a.ok(View);
 	a.equal(div.html(), 'Hello');
@@ -315,13 +317,13 @@ var
 QUnit.test('cxl.Template - attribute', function(a) {
 var
 	done = a.async(),
-	el = '<div &="@test:cxl-binding/string"></div>',
-	tpl = cxl.template(el, fb),
-	div = tpl.el.children()
+	el = $('<div><div &="@test:cxl-binding/string"></div></div>'),
+	div = el.children(),
+	link = cxl.compile(el, fb)
 ;
 	div.on('sync', function() {
 		a.equal(div.attr('test'), 'string');
-		tpl.unbind();
+		link.unbind();
 		done();
 	});
 });
@@ -331,7 +333,7 @@ var
 	done = a.async(),
 	el = $('<div><span &="if:cxl-binding/falsy"></span></div>'),
 	span = el.find('span'),
-	tpl = cxl.template(el, fb)
+	tpl = cxl.compile(el, fb)
 ;
 	span.on('sync', function() {
 		a.equal(el.find('span').length, 0);

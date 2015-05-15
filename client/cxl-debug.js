@@ -55,6 +55,11 @@ override(cxl.Router.prototype, 'execute', function(route, args) {
 		dbg('Executing route "' + route.prototype.path + '"', args);
 });
 
+/*override(cxl.Template.prototype, 'bind', function() {
+	if (this.bindings)
+		cxl.error('Template was already binded.');
+});*/
+
 // Backbone.History
 override(Backbone.History.prototype, 'loadUrl', null,
 	function(res, fragment)

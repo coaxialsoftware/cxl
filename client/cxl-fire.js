@@ -267,36 +267,42 @@ cxl.Validators = {
 /**
  * Binds DOM template to a Firebase ref.
  *
- * @param el   JQuery Element or selector.
- * @param ref  Firebase reference to bind template to.
- *
  * &="ref"    Creates a cxl.Binding object
  *            [type:]ref or @attr:ref
  */
-cxl.Template = function(el, ref)
+cxl.CompiledTemplate = function(el, ref)
 {
-	// TODO OPTIMIZE
-	this.el = typeof(el)==='string' ?
-		$(window.document.createDocumentFragment())
-			.append(_.template(el)(ref)) : $(el);
-	this.bind(ref);
+	this.bindings = [];
+	this.views = [];
+	this.el = el;
+	this.ref = ref;
 };
 
-var
-	bindRegex = /\s*([#@])?(?:([^\s>"'=]+):)?([^\s]+)/g
-;
+_.extend(cxl.CompiledTemplate.prototype, {
 
-_.extend(cxl.Template.prototype, {
-
+	bindings: null,
+	views: null,
 	el: null,
 	ref: null,
-	bindings: null,
 
 	unbind: function()
 	{
 		_.invoke(this.bindings, 'unbind');
-		return this;
-	},
+		_.invoke(this.views, 'destroy');
+
+		this.bindings = null;
+	}
+
+});
+
+cxl.TemplateCompiler = function()
+{
+
+};
+
+_.extend(cxl.TemplateCompiler.prototype, {
+
+	bindRegex: /([#@])?(?:([^\s>"'=]+):)?([^\s]+)(?:\s+|$)/g,
 
 	bindView: function(bind, name, ref)
 	{
@@ -310,6 +316,8 @@ _.extend(cxl.Template.prototype, {
 			view.initializeBind(bind);
 		else
 			bind.type = view.bindingType || 'value';
+
+		return view;
 	},
 
 	bindAttribute: function(bind, name)
@@ -318,50 +326,56 @@ _.extend(cxl.Template.prototype, {
 		bind.attribute = name;
 	},
 
-	bindElement: function(el, b)
+	bindElement: function(el, b, result)
 	{
 	var
-		ref = this.ref,
+		ref = result.ref,
 		bind = {
-			el: el,
+			el: $(el),
 			ref: (ref && b[3]) ? ref.child(b[3]) : ref
 		}
 	;
 		if (b[1]==='@')
 			this.bindAttribute(bind, b[2]);
 		else if (b[1]==='#')
-			this.bindView(bind, b[2] || b[3], b[2] ? ref.child(b[3]) : ref);
+			result.views.push(this.bindView(bind, b[2] || b[3], b[2] ? ref.child(b[3]) : ref));
 		else
 			bind.type = b[2];
 
 		if (bind.ref)
-			this.bindings.push(new cxl.Binding(bind));
+			result.bindings.push(new cxl.Binding(bind));
 	},
 
-	parseBinding: function(el)
+	parseBinding: function(result, el)
 	{
-		var parsed, $el = $(el);
-
-		while ((parsed = bindRegex.exec(el.getAttribute('&'))))
-			this.bindElement($el, parsed);
+	var
+		prop = el.getAttribute('&'),
+		$el = $(el),
+		parsed
+	;
+		// TODO do we need this lastIndex reset?
+		this.bindRegex.lastIndex = 0;
+		while ((parsed = this.bindRegex.exec(prop)))
+			this.bindElement($el, parsed, result);
 	},
 
-	// TODO check bindings property is null
-	bind: function(ref)
+	compile: function(el, ref)
 	{
-		this.bindings = [];
+		if (typeof(el)==='string')
+			el = $(document.createDocumentFragment()).append(el);
 
-		if (ref)
-			this.ref = ref;
+		var result = new cxl.CompiledTemplate(el, ref);
 
-		_.each(this.el[0].querySelectorAll('[\\&]'), this.parseBinding, this);
+		//el.find('[\\&]').each(this.parseBinding.bind(this, result));
+		_.each(el[0].querySelectorAll('[\\&]'), this.parseBinding.bind(this, result));
 
-		return this;
+		return result;
 	}
 
 });
 
 cxl.binding = function(op) { return new cxl.Binding(op); };
-cxl.template = function(el, ref) { return new cxl.Template(el, ref); };
+cxl.templateCompiler = new cxl.TemplateCompiler();
+cxl.compile = function(el, ref) { return cxl.templateCompiler.compile(el, ref); };
 
 })(this.cxl, this._, this.jQuery);

@@ -153,6 +153,7 @@ $(function() {
 var cxl = window.cxl = new Module({
 	name: 'cxl',
 	modules: {},
+	templates: {},
 	views: {},
 	Module: Module,
 
@@ -161,6 +162,12 @@ var cxl = window.cxl = new Module({
 	{
 		return this.modules[name] ||
 			(this.modules[name]=new cxl.Module({ name: name }));
+	},
+
+	template: function(id)
+	{
+		return this.templates[id] ||
+			(this.templates[id]=document.getElementById(id).innerHTML);
 	},
 
 	register: function(obj)
@@ -219,6 +226,9 @@ cxl.View = Backbone.View.extend({
 	/// Template Id
 	templateUrl: null,
 
+	/// Bindings
+	bindings: null,
+
 	/// Reference for cxl.Binding
 	ref: null,
 
@@ -240,21 +250,27 @@ cxl.View = Backbone.View.extend({
 		view = this
 	;
 		if (view.templateUrl)
-			// TODO add check for tempalteUrl
-			view.template = cxl.id(view.templateUrl).innerHTML;
+			view.template = cxl.template(view.templateUrl);
 
 		if (view.template)
-		    view.loadTemplate(view.template);
+			view.loadTemplate(view.template);
 
 	    view.initialize.call(view, view.$el, args);
 
-	    if (view.template)
-	    	view.template = cxl.template(view.$el, view.ref);
+		if (view.template)
+			view.template = cxl.compile(view.$el, view.ref);
 
-	    view.delegateEvents();
+		// TODO see if we can put this back somehow
+	    //view.delegateEvents();
 	    view.$el.on('sync', view.onSync.bind(view));
 
 		view.render(view.$el);
+	},
+
+	destroy: function()
+	{
+		if (this.template)
+			this.template.unbind();
 	},
 
 	onSync: function(ev, err, val)
@@ -329,6 +345,9 @@ cxl.Router = Backbone.Router.extend({
 		if (Callback.prototype instanceof cxl.Route)
 		{
 			this.$content.children().addClass('leave');
+
+			if (this.currentView)
+				this.currentView.destroy();
 
 			var view = this.currentView =
 				new Callback({ parameters: args });

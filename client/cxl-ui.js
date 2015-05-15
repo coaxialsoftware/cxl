@@ -89,9 +89,7 @@ return {
 
 	onAdd: function(ev, snap)
 	{
-		//var item = this.template(snap.ref());
-		//this.$el.append(item);
-		var item = new cxl.Template(this.itemTemplate, snap.ref());
+		var item = cxl.compile(this.itemTemplate, snap.ref());
 		this.$el.append(item.el);
 	},
 
