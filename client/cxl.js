@@ -5,9 +5,7 @@
 "use strict";
 
 // Use Mustache templates
-_.templateSettings = {
-  escape: /\{\{(.+?)\}\}/g
-};
+_.templateSettings.escape = /\{\{(.+?)\}\}/g;
 
 function Module(options)
 {
@@ -68,7 +66,7 @@ _.extend(Module.prototype, {
 	{
 		this.__routes[path] = function() {
 		var
-			def = fn.call(this, this),
+			def = fn.call(this, this) || {},
 			view
 		;
 			def.path = path;

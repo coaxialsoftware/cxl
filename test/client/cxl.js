@@ -35,6 +35,21 @@ var
 	a.ok(!m.started);
 });
 
+QUnit.test('cxl.template', function(a) {
+
+	$('body').append('<script type="text/template" id="' + a.test.testId + '">' +
+		'<div class="{{hello}}"><% _.each([1, 2, 3], function(i) { %><span>{{i}}' +
+		'</span><% }) %></div></script>'
+	);
+
+	var tpl = $(cxl.template(a.test.testId)({ hello: 'world' }));
+
+	a.ok(tpl);
+	a.ok(tpl.hasClass('world'));
+	a.equal(tpl.children().length, 3);
+
+});
+
 QUnit.module('cxl.Module');
 
 QUnit.test('cxl.Module#run', function(a) {
@@ -71,6 +86,24 @@ var
 	a.equal(cxl.views.test, TestView);
 	a.equal(v.name, 'view');
 	a.equal(cxl.views[a.test.testId + '.view'], View);
+});
+
+QUnit.test('cxl.Module#route', function(a) {
+var
+	m = cxl.module(a.test.testId).route('hello', function() { })
+;
+	m.start();
+	a.ok(m);
+});
+
+QUnit.test('cxl.Module#route - function', function(a) {
+var
+	m = cxl.module(a.test.testId).route('hello', function() {
+		return function() { };
+	})
+;
+	m.start();
+	a.ok(m);
 });
 
 QUnit.test('cxl.Module#start', function(a) {
@@ -112,6 +145,14 @@ var
 		view.destroy();
 		done();
 	});
+});
+
+QUnit.test('cxl.View#destroy', function(a) {
+var
+	v = new cxl.View({  })
+;
+	v.destroy();
+	a.ok(v);
 });
 
 QUnit.test('cxl.View.create', function(a) {
