@@ -167,7 +167,7 @@ var cxl = window.cxl = new Module({
 	template: function(id)
 	{
 		return this.templates[id] ||
-			(this.templates[id]=document.getElementById(id).innerHTML);
+			(this.templates[id]=_.template(document.getElementById(id).innerHTML));
 	},
 
 	register: function(obj)
@@ -252,6 +252,9 @@ cxl.View = Backbone.View.extend({
 		if (view.templateUrl)
 			view.template = cxl.template(view.templateUrl);
 
+		if (typeof(view.template)==='string')
+			view.template = _.template(view.template);
+
 		if (view.template)
 			view.loadTemplate(view.template);
 
@@ -281,7 +284,7 @@ cxl.View = Backbone.View.extend({
 
 	loadTemplate: function(template)
 	{
-		this.$el.html(template);
+		this.$el.html(template(this));
 	}
 
 }, {
