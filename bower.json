@@ -8,6 +8,7 @@
     "bootstrap": "*",
     "backbone": "*",
     "backbone-validation": "*",
-    "firebase": "*"
+    "firebase": "*",
+    "lodash": "*"
   }
 }

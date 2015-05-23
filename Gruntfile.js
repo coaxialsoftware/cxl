@@ -154,7 +154,7 @@ module.exports = function(grunt) {
 						'client/cxl-polyfill.js',
 						'bower_components/jquery/dist/jquery.js',
 						'bower_components/bootstrap/dist/js/bootstrap.js',
-						'bower_components/underscore/underscore.js',
+						'bower_components/lodash/lodash.js',
 						'bower_components/backbone/backbone.js',
 						'bower_components/backbone-validation/dist/backbone-validation.js',
 						'bower_components/firebase/firebase.js',

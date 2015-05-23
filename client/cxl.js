@@ -10,28 +10,15 @@ _.templateSettings.escape = /\{\{(.+?)\}\}/g;
 function Module(options)
 {
 	_.extend(this, options);
+	this.initialize();
 
-	this.__config = [];
-	this.__run = [];
-	this.__views = {};
-	this.__routes = {};
+	if (this.ready)
+		$(this.ready);
 }
 
 _.extend(Module.prototype, {
 
 	name: null,
-	started: false,
-
-	__config: null,
-	__run: null,
-	__views: null,
-	__includes: null,
-	__routes: null,
-
-	extend: function(op)
-	{
-		return _.extend(this, op);
-	},
 
 	/**
 	 * Throws an error.
@@ -48,178 +35,57 @@ _.extend(Module.prototype, {
 		return cxl;
 	},
 
-	run: function(fn)
-	{
-		this.__run.push(fn);
+	ready: null
 
-		return this;
+});
+
+
+/**
+ * Global router. By default it will only support
+ * one level/state.
+ *
+ * @extends Backbone.Router
+ */
+var Router = Backbone.Router.extend({
+
+	$content: null,
+	currentView: null,
+
+	initialize: function(p)
+	{
+		_.extend(this, p);
 	},
 
-	config: function(fn)
+	refresh: function()
 	{
-		this.__config.push(fn);
+		if (Backbone.History.started)
+			Backbone.history.stop();
 
-		return this;
+		Backbone.history.start();
 	},
 
-	route: function(path, fn)
+	execute: function(Callback, args)
 	{
-		this.__routes[path] = function() {
-		var
-			def = fn.call(this, this) || {},
-			view
-		;
-			def.path = path;
-
-			if (typeof(def)==='function')
-				view = def.bind(this);
-			else
-				view = cxl.Route.extend(def);
-
-			cxl.router.route(path, view);
-		};
-
-		return this;
-	},
-
-	view: function(name, fn)
-	{
-		if (fn===undefined)
-			return this.__views[name];
-
-		this.__views[name] = fn;
-
-		return this;
-	},
-
-	start: function()
-	{
-		var me = this;
-
-		if (!me.started)
+		if (Callback.prototype instanceof cxl.Route)
 		{
-			$(function() {
-				_.invoke(me.__config, 'call', me);
-				_.each(me.__views, me.__loadView, me);
-				_.invoke(me.__routes, 'call', me);
+			this.$content.children().addClass('leave');
 
-				_.invoke(me.__run, 'call', me, me);
+			if (this.currentView)
+				this.currentView.destroy();
 
-				delete me.__config;
-				delete me.__run;
+			var view = this.currentView =
+				new Callback({ parameters: args });
 
-				me.started = true;
-				cxl.router.refresh();
-			});
-		}
+			this.$content.html(view.$el.addClass('enter'));
+			this.trigger('cxl.route', view);
 
-		return me;
-	},
-
-	__loadView: function(fn, name)
-	{
-	var
-		def = _.extend(fn.call(this), {
-			module: this, name: name
-		}),
-		view = this.__views[name] = cxl.View.extend(def)
-	;
-		cxl.register(view);
+		} else if (Callback)
+			Callback.apply(this, args);
 	}
 
 });
 
-/* On ready */
-$(function() {
-
-	var $content = cxl.$content || $('[cxl-content]');
-
-	cxl.extend({
-		$body: $('body'),
-		$window: $(window),
-		$doc: $(document),
-		$content: $content,
-		router: new cxl.Router({ $content: $content }),
-		history: Backbone.history
-	}).start();
-
-	cxl.$body.addClass('cxl-ready');
-
-});
-
-/** @namespace */
-var cxl = window.cxl = new Module({
-	name: 'cxl',
-	modules: {},
-	templates: {},
-	views: {},
-	Module: Module,
-
-	// TODO add name validation in debug module.
-	module: function(name)
-	{
-		return this.modules[name] ||
-			(this.modules[name]=new cxl.Module({ name: name }));
-	},
-
-	template: function(id)
-	{
-		return this.templates[id] ||
-			(this.templates[id]=_.template(document.getElementById(id).innerHTML));
-	},
-
-	register: function(obj)
-	{
-	var
-		parent = obj.prototype.module!==cxl && obj.prototype.module.name,
-		path = (parent ? parent + '.' : '') + obj.prototype.name
-	;
-		this.views[path] = obj;
-		return this;
-	},
-
-	go: function(path)
-	{
-		window.location.hash = path;
-		return this;
-	},
-
-	/**
-	 * Select node by id
-	 */
-	id: function(id)
-	{
-		return document.getElementById(id);
-	},
-
-	resolve: function(a)
-	{
-		var promises, keys;
-
-		if ($.isPlainObject(a))
-		{
-			promises = _.values(a);
-			keys = _.keys(a);
-
-			return $.when.apply($, promises).then(function() {
-				return _.object(keys, arguments);
-			});
-		}
-
-		return $.when.apply($, a);
-	},
-
-	support: {
-		template: (function() {
-			var div = document.createElement('template');
-			return !!div.content;
-		})()
-	}
-
-});
-
-
-cxl.View = Backbone.View.extend({
+var View = Backbone.View.extend({
 
 	/// Template Id
 	templateUrl: null,
@@ -263,7 +129,6 @@ cxl.View = Backbone.View.extend({
 
 		// TODO see if we can put this back somehow
 	    //view.delegateEvents();
-	    view.$el.on('sync', view.onSync.bind(view));
 
 		view.render(view.$el);
 	},
@@ -272,12 +137,6 @@ cxl.View = Backbone.View.extend({
 	{
 		if (this.template)
 			this.template.unbind();
-	},
-
-	onSync: function(ev, err, val)
-	{
-		if (this.sync) this.sync(err, val);
-		this.trigger('sync', err, val);
 	},
 
 	loadTemplate: function(template)
@@ -293,7 +152,8 @@ cxl.View = Backbone.View.extend({
 	}
 });
 
-cxl.Route = cxl.View.extend({
+
+var Route = View.extend({
 
 	load: function(args)
 	{
@@ -317,49 +177,105 @@ cxl.Route = cxl.View.extend({
 
 });
 
-/**
- * Global router. By default it will only support
- * one level/state.
- *
- * @extends Backbone.Router
- */
-cxl.Router = Backbone.Router.extend({
+/** @namespace */
+var cxl = window.cxl = new Module({
 
-	$content: null,
-	currentView: null,
+	name: 'cxl',
 
-	initialize: function(p)
+	templates: {},
+	views: {},
+	router: null,
+
+	Module: Module,
+	Router: Router,
+	Route: Route,
+	View: View,
+
+	initialize: function()
 	{
-		_.extend(this, p);
+		this.router	= new Router();
 	},
 
-	refresh: function()
+	ready: function()
 	{
-		if (Backbone.History.started)
-			Backbone.history.stop();
+		var $content = this.$content || $('[cxl-content]');
+
+		_.extend(this, {
+			$body: $('body'),
+			$window: $(window),
+			$doc: $(document),
+			$content: $content
+		});
+
+		this.$body.addClass('cxl-ready');
+		this.history = Backbone.history;
 
 		Backbone.history.start();
 	},
 
-	execute: function(Callback, args)
+	route: function(path, def)
 	{
-		if (Callback.prototype instanceof cxl.Route)
+		var view = typeof(def)==='function' ?
+			def.bind(this) : view = cxl.Route.extend(def);
+
+		cxl.router.route(path, view);
+
+		return this;
+	},
+
+	view: function(name, fn)
+	{
+		if (fn===undefined)
+			return this.views[name];
+
+		this.views[name] = _.isPlainObject(fn) ?
+			cxl.View.extend(_.extend(fn, { module: this, name: name })) :
+			fn;
+
+		return this;
+	},
+
+	template: function(id)
+	{
+		return this.templates[id] ||
+			(this.templates[id]=_.template(document.getElementById(id).innerHTML));
+	},
+
+	go: function(path)
+	{
+		window.location.hash = path;
+		return this;
+	},
+
+	resolve: function(a)
+	{
+		var promises, keys;
+
+		if ($.isPlainObject(a))
 		{
-			this.$content.children().addClass('leave');
+			promises = _.values(a);
+			keys = _.keys(a);
 
-			if (this.currentView)
-				this.currentView.destroy();
+			return $.when.apply($, promises).then(function() {
+				return _.object(keys, arguments);
+			});
+		}
 
-			var view = this.currentView =
-				new Callback({ parameters: args });
-
-			this.$content.html(view.$el.addClass('enter'));
-			this.trigger('cxl.route', view);
-
-		} else if (Callback)
-			Callback.apply(this, args);
+		return $.when.apply($, a);
 	}
+	/*,
+
+	support: {
+		template: (function() {
+			var div = document.createElement('template');
+			return !!div.content;
+		})()
+	}*/
 
 });
+
+
+
+
 
 })(this, this.jQuery, this._, this.Backbone);
