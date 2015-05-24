@@ -13,7 +13,7 @@ function Module(options)
 	this.initialize();
 
 	if (this.ready)
-		$(this.ready);
+		$(this.ready.bind(this));
 }
 
 _.extend(Module.prototype, {
@@ -85,27 +85,55 @@ var Router = Backbone.Router.extend({
 
 });
 
-var View = Backbone.View.extend({
+function View(options)
+{
+var
+	view = this,
+	args = options && options.parameters
+;
+    _.extend(view, options);
+    view._ensureElement();
+    view.load(args);
+}
 
-	/// Template Id
-	templateUrl: null,
+_.extend(View, {
+	extend: Backbone.View.extend,
 
-	/// Bindings
-	bindings: null,
-
-	/// Reference for cxl.Binding
-	ref: null,
-
-	constructor: function cxlView(options)
+	create: function(options)
 	{
-	var
-		view = this,
-		args = options && options.parameters
-	;
-	    view.cid = _.uniqueId('view');
-	    _.extend(view, options);
-	    view._ensureElement();
-	    view.load(args);
+		return new this(options);
+	}
+});
+
+_.extend(View.prototype, {
+
+	/// {function(el)}
+	initialize: null,
+
+	/// {function(el)
+	render: null,
+
+	/// {function(err)}
+	error: null,
+
+	/// {cxl.Binding|object}
+	binding: null,
+
+	/// Current View Value
+	value: null,
+
+	_ensureElement: function()
+	{
+		this.setElement(this.el ?
+			_.result(this, 'el') :
+			document.createDocumentFragment()
+		);
+	},
+
+	setElement: function(el)
+	{
+		this.$el = $(el);
+		this.el  = this.$el[0];
 	},
 
 	load: function(args)
@@ -113,45 +141,58 @@ var View = Backbone.View.extend({
 	var
 		view = this
 	;
-		if (view.templateUrl)
-			view.template = cxl.template(view.templateUrl);
-
-		if (typeof(view.template)==='string')
-			view.template = _.template(view.template);
-
 		if (view.template)
 			view.loadTemplate(view.template);
 
-	    view.initialize.call(view, view.$el, args);
+		if (view.initialize)
+		    view.initialize(view.$el, args);
+
+		if (_.isPlainObject(view.binding))
+		{
+			view.binding.el = view;
+			view.binding = view.loadBinding(view.$el, view.binding);
+		}
 
 		if (view.template)
 			view.template = cxl.compile(view.$el, view.ref);
 
-		// TODO see if we can put this back somehow
-	    //view.delegateEvents();
+		if (view.render)
+			view.render(view.$el);
+	},
 
-		view.render(view.$el);
+	loadBinding: function(el, binding)
+	{
+		return new cxl.Binding(binding);
+	},
+
+	val: function(value)
+	{
+		if (arguments.length===0)
+			return this.value;
+
+		this.value = value;
+		return this;
 	},
 
 	destroy: function()
 	{
 		if (this.template)
-			this.template.unbind();
+			this.template.destroy();
+		if (this.binding)
+			this.binding.unbind();
 	},
 
 	loadTemplate: function(template)
 	{
-		this.$el.html(template(this));
+		// Is it a documentFragment?
+		// TODO should we assume it is empty?
+		if (this.el.nodeType===11)
+			this.$el.append(template);
+		else
+			this.$el.html(template);
 	}
 
-}, {
-	extend: Backbone.View.extend,
-	create: function(options)
-	{
-		return new this(options);
-	}
 });
-
 
 var Route = View.extend({
 
@@ -209,6 +250,8 @@ var cxl = window.cxl = new Module({
 
 		this.$body.addClass('cxl-ready');
 		this.history = Backbone.history;
+		// TODO better content loading for router
+		this.router.$content = this.$content;
 
 		Backbone.history.start();
 	},
@@ -223,13 +266,20 @@ var cxl = window.cxl = new Module({
 		return this;
 	},
 
-	view: function(name, fn)
+	view: function(def)
 	{
-		if (fn===undefined)
-			return this.views[name];
+		return new cxl.View(def);
+	},
 
-		this.views[name] = _.isPlainObject(fn) ?
-			cxl.View.extend(_.extend(fn, { module: this, name: name })) :
+	directive: function(name, fn)
+	{
+		cxl.templateCompiler.directives[name] = _.isPlainObject(fn) ?
+			function(el, binding, parameter)
+			{
+				return new cxl.View(_.extend({
+					el: el, binding: binding, parameters: parameter
+				}, fn));
+			} :
 			fn;
 
 		return this;

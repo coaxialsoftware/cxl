@@ -1,15 +1,11 @@
 
 (function() {
 
-var
+/*var
 	fb = new Firebase('https://cxl-test.firebaseio.com')
-;
+;*/
 
 QUnit.module('cxl');
-
-cxl.view('test', function() {
-	return {};
-});
 
 QUnit.test('cxl.error', function(a) {
 	a.throws(function() { cxl.error('Test'); });
@@ -20,19 +16,25 @@ QUnit.test('cxl.log', function(a) {
 	a.ok(cxl.log);
 });
 
-QUnit.test('cxl.id', function(a) {
-	var div = $('<div id="test">').appendTo('body');
-
-	a.ok(cxl.id('test'));
-	div.remove();
+QUnit.test('cxl.resolve - value', function(a) {
+var
+	done = a.async()
+;
+	cxl.resolve({ hello: 'world' }).then(function(val) {
+		a.equal(val.hello, 'world');
+		done();
+	});
 });
 
-QUnit.test('cxl.module', function(a) {
+QUnit.test('cxl.resolve - array', function(a) {
 var
-	m = cxl.module(a.test.testId)
+	done = a.async()
 ;
-	a.ok(m);
-	a.ok(!m.started);
+	cxl.resolve([ 'hello', 'world' ]).then(function(b, c) {
+		a.equal(b, 'hello');
+		a.equal(c, 'world');
+		done();
+	});
 });
 
 QUnit.test('cxl.template', function(a) {
@@ -50,6 +52,7 @@ QUnit.test('cxl.template', function(a) {
 
 });
 
+/*
 QUnit.module('cxl.Module');
 
 QUnit.test('cxl.Module#run', function(a) {
@@ -112,20 +115,11 @@ var
 ;
 	a.ok(m.started);
 });
+*/
 
 QUnit.module('cxl.View');
 
-QUnit.test('cxl.View#templateUrl', function(a) {
-var
-	tpl = $('<script type="text/template" id="template">Hello World</script>').appendTo('body'),
-	view = new cxl.View({
-		templateUrl: 'template'
-	})
-;
-	a.ok(tpl);
-	a.ok(view.template);
-});
-
+/*
 QUnit.test('cxl.View#ref', function(a) {
 var
 	done = a.async(),
@@ -146,6 +140,7 @@ var
 		done();
 	});
 });
+*/
 
 QUnit.test('cxl.View#destroy', function(a) {
 var
@@ -157,30 +152,9 @@ var
 
 QUnit.test('cxl.View.create', function(a) {
 var
-	view = cxl.View.create({ template: 'Hello' })
+	view = cxl.View.create({ el: '<div>', template: 'Hello' })
 ;
 	a.equal(view.$el.html(), 'Hello');
-});
-
-QUnit.test('cxl.resolve - value', function(a) {
-var
-	done = a.async()
-;
-	cxl.resolve({ hello: 'world' }).then(function(val) {
-		a.equal(val.hello, 'world');
-		done();
-	});
-});
-
-QUnit.test('cxl.resolve - array', function(a) {
-var
-	done = a.async()
-;
-	cxl.resolve([ 'hello', 'world' ]).then(function(b, c) {
-		a.equal(b, 'hello');
-		a.equal(c, 'world');
-		done();
-	});
 });
 
 QUnit.module('cxl.Route');

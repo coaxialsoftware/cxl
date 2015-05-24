@@ -13,6 +13,7 @@
 		"QUnit": false,
 		"cxl": true,
 		"Firebase": false,
-		"$": false
+		"$": false,
+		"_": false
 	}
 }

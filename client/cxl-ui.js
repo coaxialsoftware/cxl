@@ -3,6 +3,72 @@
 (function(cxl, _, $) {
 "use strict";
 
+cxl.validator = function(op)
+{
+	return function(val)
+	{
+		var rule, fn;
+
+		for (rule in op)
+		{
+			fn = cxl.Validators[rule];
+
+			if (fn && fn(val, op[rule])!==true)
+			{
+				return {
+					code: 'PERMISSION_DENIED',
+					validator: rule
+				};
+			}
+		}
+	};
+};
+
+cxl.Validators = {
+
+	json: function(value)
+	{
+		try {
+			if (value!=="")
+				JSON.parse(value);
+		} catch(e) {
+			return false;
+		}
+		return true;
+	},
+
+	required: function(value)
+	{
+		return (value!==undefined && value!==null && value!=="");
+	},
+
+	max: function(value, max)
+	{
+		return +value <= max;
+	},
+
+	min: function(value, min)
+	{
+		return +value >= min;
+	},
+
+	maxlength: function(value, max)
+	{
+		return value && _.has(value, 'length') && value.length<=max;
+	},
+
+	minlength: function(value, min)
+	{
+		return value && _.has(value, 'length') && value.length>=min;
+	},
+
+	pattern: function(value, regex)
+	{
+		return regex.test(value);
+	}
+
+};
+
 cxl.Field = cxl.View.extend({
 
 	$label: null,
@@ -60,6 +126,15 @@ return {
 	}
 
 };
+
+});
+
+cxl.directive('attribute', {
+
+	val: function(val)
+	{
+		this.$el.attr(this.parameters, val);
+	}
 
 });
 

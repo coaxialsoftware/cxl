@@ -2,6 +2,7 @@
 
 (function() {
 
+/*
 QUnit.module('cxl-ui');
 
 var	fb = new Firebase('https://cxl-test.firebaseio.com/cxl-ui');
@@ -123,5 +124,6 @@ var
 		bind.unbind();
 	});
 });
+*/
 
 })();

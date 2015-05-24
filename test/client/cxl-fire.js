@@ -5,25 +5,26 @@ var
 	fb = new Firebase('https://cxl-test.firebaseio.com')
 ;
 
-QUnit.module('cxl-binding');
+QUnit.module('cxl-fire');
 
 QUnit.test('cxl.Binding#constructor', function(a) {
 var
 	done = a.async(),
-	el = $('<INPUT type="text" name="test">'),
-	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/string') })
+	el = new cxl.View(),
+	ref = fb.child('cxl-binding/string'),
+	b = cxl.binding({ el: el, ref: ref })
 ;
 	a.ok(b);
-	a.equal(el.val(), '');
+	a.equal(el.val(), null);
 
-	el.on('sync', function() {
+	ref.on('value', function() {
 		a.equal(el.val(), 'string');
 		b.unbind();
 		done();
 	});
 });
 
-QUnit.test('cxl.Binding#setView checkbox', function(a) {
+/*QUnit.test('cxl.Binding#setView checkbox', function(a) {
 var
 	done = a.async(),
 	el = $('<input type="checkbox">'),
@@ -90,6 +91,7 @@ var
 	});
 
 });
+*/
 
 QUnit.test('cxl.Binding#unbind', function(a) {
 var
@@ -100,63 +102,71 @@ var
 	a.ok(b);
 });
 
+QUnit.test('cxl.Binding write', function(a) {
+var
+	done = a.async(),
+	b = cxl.binding({ el: cxl.view(), ref: fb.child('cxl-binding/var') })
+;
+	b.el.val = function(val) {
+		a.equal(val, 'hello');
+		b.unbind();
+		done();
+	};
+
+	b.set('hello');
+});
+
 QUnit.test('cxl.Binding write error', function(a) {
 var
 	done = a.async(),
-	el = $('<input type="checkbox">'),
-	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/bool') })
+	b = cxl.binding({ el: cxl.view(), ref: fb.child('cxl-binding/bool') })
 ;
-	el.on('sync', function(ev, err) {
-		if (err)
+	b.el.error = function(err) {
+		a.equal(err.code, 'PERMISSION_DENIED');
+		b.unbind();
+		done();
+	};
+
+	b.set(false);
+	b.set(false);
+});
+
+QUnit.test('cxl.Binding#bind - addChild', function(a) {
+var
+	done = a.async(),
+	el = new cxl.View({
+		addChild: _.debounce(function(snap)
 		{
-			a.equal(err.code, 'PERMISSION_DENIED');
-			a.equal(el.prop('checked'), true);
+			a.ok(snap);
 			b.unbind();
 			done();
-		}
-	});
-
-	el.prop('checked', false).change();
+		}),
+		removeChild: function() {},
+		moveChild: function() {}
+	}),
+	b = cxl.binding({ el: el, ref: fb })
+;
+	a.ok(b);
+	a.equal(el.val(), null);
 });
 
 QUnit.test('cxl.Binding server validation error', function(a) {
 var
 	done = a.async(),
-	el = $('<input type="text">'),
-	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/validate') })
+	b = cxl.binding({ el: cxl.view(),
+		ref: fb.child('cxl-binding/validate') })
 ;
-	el.on('sync', function(ev, err) {
-		if (err)
-		{
-			a.equal(err.code, 'PERMISSION_DENIED');
-			a.ok(b.value !== 'string is too long');
-			b.unbind();
-			done();
-		}
-	});
+	b.el.error = function(err) {
+		a.equal(err.code, 'PERMISSION_DENIED');
+		a.ok(b.value !== 'string is too long');
+		b.unbind();
+		done();
+	};
 
-	el.val('string is too long').change();
+	b.set('string is too long');
 });
 
-QUnit.test('cxl.Binding server validation error', function(a) {
-var
-	done = a.async(),
-	el = $('<input type="text">'),
-	b = cxl.binding({ el: el, ref: fb.child('cxl-binding/validate') })
-;
-	el.on('sync', function(ev, err) {
-		if (err)
-		{
-			a.equal(err.code, 'PERMISSION_DENIED');
-			a.ok(b.value !== 'string is too long');
-			b.unbind();
-			done();
-		}
-	});
-
-	el.val('string is too long').change();
-});
-
+/*
 QUnit.test('cxl.Binding client validation error', function(a) {
 var
 	done = a.async(),
@@ -285,7 +295,84 @@ var
 
 	el.val('"json"').change();
 });
+*/
 
+QUnit.module('cxl.TemplateCompiler');
+
+QUnit.test('cxl.TemplateCompiler - view directive', function(a) {
+	var tpl;
+	var div = $('<div><div &="' + a.test.testId + '"></div></div>');
+
+	cxl.directive(a.test.testId, { template: 'Hello' });
+	tpl = cxl.compile(div);
+
+	a.ok(tpl);
+	a.equal(div.children().html(), 'Hello');
+
+	tpl.destroy();
+});
+
+QUnit.test('cxl.TemplateCompiler - list view directive', function(a) {
+	var tpl, fn = function() {};
+	var div = $('<div><div &="' + a.test.testId + '"></div></div>');
+	var done = a.async();
+
+	cxl.directive(a.test.testId, {
+		template: 'Hello',
+		addChild: _.debounce(function(snap)
+		{
+			a.ok(snap);
+			tpl.destroy();
+			done();
+		}),
+		removeChild: fn, moveChild: fn
+	});
+	tpl = cxl.compile(div, fb.child('cxl-binding'));
+
+	a.ok(tpl);
+	a.equal(div.children().html(), 'Hello');
+});
+
+QUnit.test('cxl.TemplateCompiler - attribute directive', function(a) {
+	var tpl;
+	var div = $('<div><div &="@' + a.test.testId + '"></div></div>');
+
+	cxl.directive('attribute', {
+		template: 'Hello'
+	});
+	tpl = cxl.compile(div);
+
+	a.ok(tpl);
+	a.equal(div.children().html(), 'Hello');
+	a.equal(tpl.bindings[0].parameters, a.test.testId);
+
+	tpl.destroy();
+});
+
+QUnit.test('cxl.TemplateCompiler - class directive', function(a) {
+	var tpl;
+	var div = $('<div><div &=".' + a.test.testId + ':cxl-binding"></div></div>');
+
+	cxl.directive('class', {
+		template: 'Hello'
+	});
+	tpl = cxl.compile(div, fb);
+
+	a.ok(tpl);
+	a.equal(div.children().html(), 'Hello');
+	a.equal(tpl.bindings[0].parameters, a.test.testId);
+
+	tpl.destroy();
+});
+
+QUnit.test('cxl.TemplateCompiler#compile - string', function(a) {
+	var tpl = cxl.compile('<div>Hello</div>');
+
+	a.equal(tpl.el[0].nodeType, 11);
+});
+
+
+/*
 QUnit.test('cxl.TemplateCompiler#compile', function(a) {
 var
 	done = a.async(),
@@ -300,18 +387,6 @@ var
 		compiled.unbind();
 		done();
 	});
-});
-
-QUnit.test('cxl.Template - view', function(a) {
-var
-	View = cxl.view(a.test.testId, cxl.View.extend({ template: 'Hello' })),
-	el = $('<div><div &="#' + a.test.testId + '"></div></div>'),
-	div = el.children(),
-	tpl = cxl.compile(el)
-;
-	a.ok(View);
-	a.equal(div.html(), 'Hello');
-	tpl.unbind();
 });
 
 QUnit.test('cxl.Template - attribute', function(a) {
@@ -342,6 +417,7 @@ var
 	});
 
 });
+*/
 
 
 })();

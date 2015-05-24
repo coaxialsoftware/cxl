@@ -6,7 +6,7 @@
  *
  * options:
  *
- * el          jQuery element
+ * el          cxl.View
  * ref         Firebase reference
  * validate    Validation function or cxl.validate configuration object.
  * type        Type of binding see cxl.Binding.setView and getView.
@@ -17,17 +17,12 @@ cxl.Binding = function(options)
 {
 	this.el = options.el;
 	this.ref = options.ref;
-	this.type = options.type;
-	this.attribute = options.attribute;
-
-	this.validate = _.isFunction(options.validate) ?
-		options.validate : cxl.validator(options.validate);
 
 	this._onComplete = this.onComplete.bind(this);
-	this.setViewHandlers();
 	this.bind();
 };
 
+/*
 _.extend(cxl.Binding, {
 
 	setView: {
@@ -73,11 +68,12 @@ _.extend(cxl.Binding, {
 	}
 
 });
+*/
 
 _.extend(cxl.Binding.prototype, {
 
 	/**
-	 * jQuery element.
+	 * cxl.View element.
 	 */
 	el: null,
 
@@ -91,19 +87,7 @@ _.extend(cxl.Binding.prototype, {
 	 */
 	value: null,
 
-	/**
-	 * Current View value
-	 */
-	viewValue: null,
-
-	/**
-	 * Validator Function. If an object is passed it will
-	 * be passed to cxl.validator() and the resulting function
-	 * will be used.
-	 */
-	validate: null,
-
-	setViewHandlers: function()
+	/*setViewHandlers: function()
 	{
 	var
 		tagName = this.el.prop('tagName'),
@@ -113,7 +97,7 @@ _.extend(cxl.Binding.prototype, {
 	;
 		this.setViewValue = cxl.Binding.setView[type];
 		this.getViewValue = cxl.Binding.getView[type];
-	},
+	},*/
 
 	unbind: function()
 	{
@@ -121,60 +105,34 @@ _.extend(cxl.Binding.prototype, {
 		this.ref.off('child_added');
 		this.ref.off('child_removed');
 		this.ref.off('child_moved');
-		this.el.off('change', this._ovc);
-		this.el.removeData('cxl.bind');
 	},
 
 	bind: function()
 	{
-		this.ref.on('value', this.onModelChange, this);
-		this._ovc = this.onViewChange.bind(this);
-		this.el.on('change input', this._ovc);
-		this.el.data('cxl.bind', this);
-		this.bindContainer();
-	},
+	var
+		view = this.el,
+		r = this.ref
+	;
+		r.on('value', this.onModelChange, this);
 
-	bindContainer: function()
-	{
-		var el = this.el;
-
-		this.ref.on('child_added', function(snap, prev) {
-			el.trigger('add', [snap, prev]);
-		});
-
-		this.ref.on('child_removed', function(snap) {
-			el.trigger('remove', snap);
-		});
-
-		this.ref.on('child_moved', function(snap, prev) {
-			el.trigger('move', [snap, prev]);
-		});
+		if (view.addChild)
+			this.ref.on('child_added', view.addChild, view);
+		if (view.removeChild)
+			this.ref.on('child_removed', view.removeChild, view);
+		if (view.moveChild)
+			this.ref.on('child_moved', view.moveChild, view);
 	},
 
 	onModelChange: function(snapshot)
 	{
 		this.value = snapshot.val();
-		this.setViewValue(this.value);
-		this.sync();
+		this.el.val(this.value);
 	},
 
-	onViewChange: function()
+	set: function(val)
 	{
-		var val = this.getViewValue(), err;
-
-		if (this.validate)
-		{
-			err = this.validate(val);
-			if (err)
-				return this.sync(err);
-		}
-
 		if (this.value!==val)
 			this.ref.set(val, this._onComplete);
-		else if (this.viewValue!==val)
-			this.sync();
-
-		this.viewValue=val;
 	},
 
 	// Binded handler
@@ -182,87 +140,35 @@ _.extend(cxl.Binding.prototype, {
 
 	onComplete: function(err)
 	{
-		if (err)
-			this.sync(err);
-	},
-
-	sync: function(err)
-	{
-		this.el.trigger("sync", [err, this.value]);
-
-		return this;
+		if (err && this.el.error)
+			this.el.error(err);
 	}
-
 
 });
 
-cxl.validator = function(op)
+
+
+cxl.CompiledTemplate = function(el, ref)
 {
-	return function(val)
-	{
-		var rule, fn;
-
-		for (rule in op)
-		{
-			fn = cxl.Validators[rule];
-
-			if (fn && fn(val, op[rule])!==true)
-			{
-				return {
-					code: 'PERMISSION_DENIED',
-					validator: rule
-				};
-			}
-		}
-	};
+	this.bindings = [];
+	this.el = el;
+	// TODO see if we can remove ref
+	this.ref = ref;
 };
 
+_.extend(cxl.CompiledTemplate.prototype, {
 
-cxl.Validators = {
+	bindings: null,
+	el: null,
+	ref: null,
 
-	json: function(value)
+	destroy: function()
 	{
-		try {
-			if (value!=="")
-				JSON.parse(value);
-		} catch(e) {
-			return false;
-		}
-		return true;
-	},
-
-	required: function(value)
-	{
-		return (value!==undefined && value!==null && value!=="");
-	},
-
-	max: function(value, max)
-	{
-		return +value <= max;
-	},
-
-	min: function(value, min)
-	{
-		return +value >= min;
-	},
-
-	maxlength: function(value, max)
-	{
-		return value && _.has(value, 'length') && value.length<=max;
-	},
-
-	minlength: function(value, min)
-	{
-		return value && _.has(value, 'length') && value.length>=min;
-	},
-
-	pattern: function(value, regex)
-	{
-		return regex.test(value);
+		_.invoke(this.bindings, 'destroy');
+		this.bindings = null;
 	}
 
-};
-
+});
 
 /**
  * Binds DOM template to a Firebase ref.
@@ -270,41 +176,18 @@ cxl.Validators = {
  * &="ref"    Creates a cxl.Binding object
  *            [type:]ref or @attr:ref
  */
-cxl.CompiledTemplate = function(el, ref)
-{
-	this.bindings = [];
-	this.views = [];
-	this.el = el;
-	this.ref = ref;
-};
-
-_.extend(cxl.CompiledTemplate.prototype, {
-
-	bindings: null,
-	views: null,
-	el: null,
-	ref: null,
-
-	unbind: function()
-	{
-		_.invoke(this.bindings, 'unbind');
-		_.invoke(this.views, 'destroy');
-
-		this.bindings = null;
-	}
-
-});
-
 cxl.TemplateCompiler = function()
 {
-
+	this.directives = {};
 };
 
 _.extend(cxl.TemplateCompiler.prototype, {
 
-	bindRegex: /([#@])?(?:([^\s>"'=]+):)?([^\s]+)(?:\s+|$)/g,
+	directives: null,
 
-	bindView: function(bind, name, ref)
+	bindRegex: /([\.@])?(?:([^:\s>"'=]+))(?::([^\s]+))?(?:\s+|$)/g,
+
+	/*bindView: function(bind, name, ref)
 	{
 		bind.ref = ref;
 		var view = cxl.view(name).create({
@@ -325,25 +208,33 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		bind.type = 'attribute';
 		bind.attribute = name;
 	},
-
+	*/
 	bindElement: function(el, b, result)
 	{
 	var
 		ref = result.ref,
-		bind = {
-			el: $(el),
+		directive, parameter,
+		binding = {
 			ref: (ref && b[3]) ? ref.child(b[3]) : ref
 		}
 	;
 		if (b[1]==='@')
-			this.bindAttribute(bind, b[2]);
-		else if (b[1]==='#')
-			result.views.push(this.bindView(bind, b[2] || b[3], b[2] ? ref.child(b[3]) : ref));
+		{
+			directive = 'attribute';
+			parameter = b[2];
+		}
+		else if (b[1]==='.')
+		{
+			directive = 'class';
+			parameter = b[2];
+		}
 		else
-			bind.type = b[2];
+			directive = b[2];
 
-		if (bind.ref)
-			result.bindings.push(new cxl.Binding(bind));
+		result.bindings.push(
+			this.directives[directive](el,
+				binding.ref && binding, parameter)
+		);
 	},
 
 	parseBinding: function(result, el)
