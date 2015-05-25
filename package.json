@@ -24,6 +24,7 @@
 		"grunt-contrib-watch": "*",
 		"grunt-contrib-uglify": "*",
 		"grunt-contrib-less": "*",
+		"grunt-contrib-copy": "*",
 		"grunt-contrib-nodeunit": "*",
 
 		"grunt-karma": "*",

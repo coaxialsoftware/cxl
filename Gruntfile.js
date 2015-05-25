@@ -45,6 +45,21 @@ module.exports = function(grunt) {
 				}
 			},
 
+			fonts: {
+				files: {
+					'dist/glyphicons-halflings-regular.woff2':
+						'bower_components/bootstrap/fonts/glyphicons-halflings-regular.woff2',
+					'dist/glyphicons-halflings-regular.woff':
+						'bower_components/bootstrap/fonts/glyphicons-halflings-regular.woff',
+					'dist/glyphicons-halflings-regular.ttf':
+						'bower_components/bootstrap/fonts/glyphicons-halflings-regular.ttf',
+					'dist/glyphicons-halflings-regular.eot':
+						'bower_components/bootstrap/fonts/glyphicons-halflings-regular.eot',
+					'dist/glyphicons-halflings-regular.svg':
+						'bower_components/bootstrap/fonts/glyphicons-halflings-regular.svg'
+				}
+			},
+
 			/*server: {
 				files: {
 					'dist/<%=server.name%>.js': [ 'server/cxl.js' ],
@@ -108,7 +123,7 @@ module.exports = function(grunt) {
 			},
 
 			less: {
-				files: 'client/less/**/*.less',
+				files: 'less/**/*.less',
 				tasks: [ 'less:client' ]
 			},
 
@@ -166,7 +181,23 @@ module.exports = function(grunt) {
 					'client/**/*.js': [ 'coverage' ]
 				}
 			}
+		},
+
+		copy: {
+
+			client: {
+				files: [
+					{
+						expand:true,
+						src: '*',
+						dest: 'dist',
+						cwd: 'bower_components/bootstrap/fonts'
+					}
+				]
+			}
+
 		}
+
 
 	});
 
@@ -177,10 +208,11 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-less');
 	grunt.loadNpmTasks('grunt-contrib-nodeunit');
+	grunt.loadNpmTasks('grunt-contrib-copy');
 
 	grunt.loadNpmTasks('grunt-karma');
 
-	grunt.registerTask('default', [ 'jshint', 'clean', 'concat', 'less' ]);
+	grunt.registerTask('default', [ 'jshint', 'clean', 'concat', 'copy', 'less' ]);
 	grunt.registerTask('minify', [ 'default', 'uglify:dist' ]);
 	grunt.registerTask('release', [ 'default', 'uglify:release']);
 };
