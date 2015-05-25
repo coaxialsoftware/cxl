@@ -2,7 +2,7 @@
  * cxl Debug module
  */
 
-(function(cxl, Backbone) {
+(function(cxl, Backbone, _) {
 "use strict";
 
 function override(obj, fn, pre, post)
@@ -33,6 +33,23 @@ function dbg()
 	cxl.log.apply(cxl, arguments);
 }
 
+cxl.log = function(msg)
+{
+	var console = window.console;
+	var name = this.name;
+	var single = typeof(msg)==='string' ? '[' + name + '] ' + msg : msg;
+
+	if (arguments.length>1)
+	{
+		console.groupCollapsed(single);
+		_.each(arguments, console.log, console);
+		console.groupEnd();
+	} else
+		console.log(single);
+
+	return cxl;
+};
+
 override(cxl, 'include', function(module) {
 	dbg('Including module ' + module);
 });
@@ -51,14 +68,9 @@ override(cxl.Router.prototype, 'route', function(path) {
 });
 
 override(cxl.Router.prototype, 'execute', function(route, args) {
-	if (route.prototype instanceof cxl.Route)
-		dbg('Executing route "' + route.prototype.path + '"', args);
+	dbg('Executing route.', route, args);
 });
 
-/*override(cxl.Template.prototype, 'bind', function() {
-	if (this.bindings)
-		cxl.error('Template was already binded.');
-});*/
 
 // Backbone.History
 override(Backbone.History.prototype, 'loadUrl', null,
@@ -72,4 +84,4 @@ override(Backbone.History.prototype, 'loadUrl', null,
 );
 
 
-})(this.cxl, this.Backbone);
+})(this.cxl, this.Backbone, this._);

@@ -1,5 +1,5 @@
 
-(function(cxl, _, $) {
+(function(cxl, _) {
 
 /**
  * Two way Binding for firebase objects.
@@ -148,10 +148,11 @@ _.extend(cxl.Binding.prototype, {
 
 
 
-cxl.CompiledTemplate = function(el, ref)
+cxl.CompiledTemplate = function(el, ref, local)
 {
 	this.bindings = [];
 	this.el = el;
+	this.local = local;
 	// TODO see if we can remove ref
 	this.ref = ref;
 };
@@ -159,8 +160,12 @@ cxl.CompiledTemplate = function(el, ref)
 _.extend(cxl.CompiledTemplate.prototype, {
 
 	bindings: null,
+	// Compiled element
 	el: null,
+	// Firebase reference
 	ref: null,
+	// Local directives
+	local: null,
 
 	destroy: function()
 	{
@@ -179,86 +184,98 @@ _.extend(cxl.CompiledTemplate.prototype, {
 cxl.TemplateCompiler = function()
 {
 	this.directives = {};
+
+	// TODO measure performance
+	this.createFragment = cxl.support.createContextualFragment ?
+		this.createFragmentRange : (cxl.support.template ?
+		this.createFragmentTemplate : this.createFragmentLegacy);
 };
 
 _.extend(cxl.TemplateCompiler.prototype, {
 
 	directives: null,
 
-	bindRegex: /([\.@])?(?:([^:\s>"'=]+))(?::([^\s]+))?(?:\s+|$)/g,
+	bindRegex: /([#\.@])?(?:([^:\s>"'=]+))(?::([^\s]+))?(?:\s+|$)/g,
 
-	/*bindView: function(bind, name, ref)
+	createFragment: null,
+
+	createFragmentRange: function(content)
 	{
-		bind.ref = ref;
-		var view = cxl.view(name).create({
-			el: bind.el,
-			ref: ref
-		});
-
-		if (view.initializeBind)
-			view.initializeBind(bind);
-		else
-			bind.type = view.bindingType || 'value';
-
-		return view;
+		return document.createRange().createContextualFragment(content);
 	},
 
-	bindAttribute: function(bind, name)
+	createFragmentTemplate: function(content)
 	{
-		bind.type = 'attribute';
-		bind.attribute = name;
+		var tpl = document.createElement('template');
+		tpl.innerHTML = content;
+		return tpl.content;
 	},
-	*/
+
+	createFragmentLegacy: function(content)
+	{
+		var frag = document.createDocumentFragment(),
+			tmp = document.createElement('body'), child;
+		tmp.innerHTML = content;
+
+		while ((child = tmp.firstChild)) {
+			frag.appendChild(child);
+		}
+
+		return frag;
+	},
+
 	bindElement: function(el, b, result)
 	{
 	var
-		ref = result.ref,
-		directive, parameter,
-		binding = {
-			ref: (ref && b[3]) ? ref.child(b[3]) : ref
-		}
+		directive,
+		ref = (result.ref && b[3]) ?
+			result.ref.child(b[3]) : result.ref,
+		options = { el: el, binding: ref && { ref: ref } }
 	;
 		if (b[1]==='@')
 		{
-			directive = 'attribute';
-			parameter = b[2];
+			directive = this.directives.attribute;
+			options.parameters = b[2];
 		}
 		else if (b[1]==='.')
 		{
-			directive = 'class';
-			parameter = b[2];
+			directive = this.directives.class;
+			options.parameters = b[2];
+		}
+		else if (b[1]==='#')
+		{
+			directive = result.local[b[2]];
 		}
 		else
-			directive = b[2];
+			directive = this.directives[b[2]];
 
-		result.bindings.push(
-			this.directives[directive](el,
-				binding.ref && binding, parameter)
-		);
+		result.bindings.push(directive(options));
 	},
 
 	parseBinding: function(result, el)
 	{
 	var
 		prop = el.getAttribute('&'),
-		$el = $(el),
 		parsed
 	;
+		el.removeAttribute('&');
+
 		// TODO do we need this lastIndex reset?
 		this.bindRegex.lastIndex = 0;
 		while ((parsed = this.bindRegex.exec(prop)))
-			this.bindElement($el, parsed, result);
+			this.bindElement(el, parsed, result);
 	},
 
-	compile: function(el, ref)
+	compile: function(el, ref, local)
 	{
 		if (typeof(el)==='string')
-			el = $(document.createDocumentFragment()).append(el);
-
-		var result = new cxl.CompiledTemplate(el, ref);
-
-		//el.find('[\\&]').each(this.parseBinding.bind(this, result));
-		_.each(el[0].querySelectorAll('[\\&]'), this.parseBinding.bind(this, result));
+			el = this.createFragment(el);
+	var
+		result = new cxl.CompiledTemplate(el, ref, local),
+		match
+	;
+		while ((match = el.querySelector('[\\&]')))
+			this.parseBinding(result, match);
 
 		return result;
 	}
@@ -267,6 +284,6 @@ _.extend(cxl.TemplateCompiler.prototype, {
 
 cxl.binding = function(op) { return new cxl.Binding(op); };
 cxl.templateCompiler = new cxl.TemplateCompiler();
-cxl.compile = function(el, ref) { return cxl.templateCompiler.compile(el, ref); };
+cxl.compile = function(el, ref, local) { return cxl.templateCompiler.compile(el, ref, local); };
 
-})(this.cxl, this._, this.jQuery);
+})(this.cxl, this._);

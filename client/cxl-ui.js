@@ -114,33 +114,9 @@ cxl.Field = cxl.View.extend({
 
 });
 
-cxl.view('switch', function() {
+cxl.ui = { };
 
-return {
-
-	bindingType: 'checkbox',
-
-	sync: function(err, val)
-	{
-		this.$el.parent().toggleClass('active', val===true);
-	}
-
-};
-
-});
-
-cxl.directive('attribute', {
-
-	val: function(val)
-	{
-		this.$el.attr(this.parameters, val);
-	}
-
-});
-
-cxl.view('list', function() {
-
-return {
+cxl.ui.List = cxl.View.extend({
 
 	// Item Template
 	itemTemplate: null,
@@ -156,15 +132,11 @@ return {
 		}
 
 		cxl.View.prototype.load.apply(this, arguments);
-
-		this.$el.on('add', this.onAdd.bind(this));
-		this.$el.on('remove', this.onRemove.bind(this));
-		this.$el.on('move', this.onMove.bind(this));
 	},
 
 	onAdd: function(ev, snap)
 	{
-		var item = cxl.compile(this.itemTemplate, snap.ref());
+		var item = cxl.compile(this.itemTemplate, snap.ref(), this);
 		this.$el.append(item.el);
 	},
 
@@ -178,11 +150,9 @@ return {
 		window.console.log('move', arguments);
 	}
 
-};
-
 });
 
-cxl.Form = cxl.View.extend({
+cxl.ui.Form = cxl.View.extend({
 
 	events: {
 		'submit': 'onSubmit'
@@ -210,5 +180,22 @@ cxl.Form = cxl.View.extend({
 
 });
 
+cxl.directive('switch', {
+	val: function(val)
+	{
+		this.$el.parent().toggleClass('active', val===true);
+	}
+});
+
+cxl.directive('attribute', {
+
+	val: function(val)
+	{
+		this.$el.attr(this.parameters, val);
+	}
+
+});
+
+cxl.directive('list', cxl.ui.List);
 
 })(this.cxl, this._, this.jQuery, this.Firebase);

@@ -37,6 +37,7 @@ var
 	});
 });
 
+/*
 QUnit.test('cxl.template', function(a) {
 
 	$('body').append('<script type="text/template" id="' + a.test.testId + '">' +
@@ -52,7 +53,6 @@ QUnit.test('cxl.template', function(a) {
 
 });
 
-/*
 QUnit.module('cxl.Module');
 
 QUnit.test('cxl.Module#run', function(a) {

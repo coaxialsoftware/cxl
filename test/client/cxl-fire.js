@@ -304,7 +304,7 @@ QUnit.test('cxl.TemplateCompiler - view directive', function(a) {
 	var div = $('<div><div &="' + a.test.testId + '"></div></div>');
 
 	cxl.directive(a.test.testId, { template: 'Hello' });
-	tpl = cxl.compile(div);
+	tpl = cxl.compile(div[0]);
 
 	a.ok(tpl);
 	a.equal(div.children().html(), 'Hello');
@@ -327,7 +327,7 @@ QUnit.test('cxl.TemplateCompiler - list view directive', function(a) {
 		}),
 		removeChild: fn, moveChild: fn
 	});
-	tpl = cxl.compile(div, fb.child('cxl-binding'));
+	tpl = cxl.compile(div[0], fb.child('cxl-binding'));
 
 	a.ok(tpl);
 	a.equal(div.children().html(), 'Hello');
@@ -340,7 +340,7 @@ QUnit.test('cxl.TemplateCompiler - attribute directive', function(a) {
 	cxl.directive('attribute', {
 		template: 'Hello'
 	});
-	tpl = cxl.compile(div);
+	tpl = cxl.compile(div[0]);
 
 	a.ok(tpl);
 	a.equal(div.children().html(), 'Hello');
@@ -356,7 +356,7 @@ QUnit.test('cxl.TemplateCompiler - class directive', function(a) {
 	cxl.directive('class', {
 		template: 'Hello'
 	});
-	tpl = cxl.compile(div, fb);
+	tpl = cxl.compile(div[0], fb);
 
 	a.ok(tpl);
 	a.equal(div.children().html(), 'Hello');
@@ -365,10 +365,27 @@ QUnit.test('cxl.TemplateCompiler - class directive', function(a) {
 	tpl.destroy();
 });
 
+QUnit.test('cxl.TemplateCompiler - local directive', function(a) {
+	var tpl;
+	var div = $('<div><div &="#local:cxl-binding"></div></div>');
+	var scope = {
+		local: function(options) {
+			return new cxl.View(_.extend(options,
+				{ template: 'Hello' }));
+		}
+	};
+	tpl = cxl.compile(div[0], fb, scope);
+
+	a.ok(tpl);
+	a.equal(div.children().html(), 'Hello');
+
+	tpl.destroy();
+});
+
 QUnit.test('cxl.TemplateCompiler#compile - string', function(a) {
 	var tpl = cxl.compile('<div>Hello</div>');
 
-	a.equal(tpl.el[0].nodeType, 11);
+	a.equal(tpl.el.nodeType, 11);
 });
 
 

@@ -28,12 +28,8 @@ _.extend(Module.prototype, {
 		throw new Error('[' + this.name + '] ' + msg);
 	},
 
-	log: function(msg)
-	{
-		window.console.log('[' + this.name + '] ' + msg);
-
-		return cxl;
-	},
+	// Disable login in production.
+	log: function() { },
 
 	ready: null
 
@@ -154,7 +150,7 @@ _.extend(View.prototype, {
 		}
 
 		if (view.template)
-			view.template = cxl.compile(view.$el, view.ref);
+			view.template = cxl.compile(view.el, view.ref, view);
 
 		if (view.render)
 			view.render(view.$el);
@@ -273,14 +269,20 @@ var cxl = window.cxl = new Module({
 
 	directive: function(name, fn)
 	{
-		cxl.templateCompiler.directives[name] = _.isPlainObject(fn) ?
-			function(el, binding, parameter)
+		var d = fn;
+
+		if (_.isPlainObject(fn))
+			d = function(options)
 			{
-				return new cxl.View(_.extend({
-					el: el, binding: binding, parameters: parameter
-				}, fn));
-			} :
-			fn;
+				return new cxl.View(_.extend(options, fn));
+			};
+		else if (fn.prototype instanceof cxl.View)
+			d = function(options)
+			{
+				return fn.create(options);
+			};
+
+		cxl.templateCompiler.directives[name] = d;
 
 		return this;
 	},
@@ -288,7 +290,7 @@ var cxl = window.cxl = new Module({
 	template: function(id)
 	{
 		return this.templates[id] ||
-			(this.templates[id]=_.template(document.getElementById(id).innerHTML));
+			(this.templates[id]=document.getElementById(id).innerHTML);
 	},
 
 	go: function(path)
@@ -312,15 +314,23 @@ var cxl = window.cxl = new Module({
 		}
 
 		return $.when.apply($, a);
-	}
-	/*,
+	},
 
 	support: {
 		template: (function() {
 			var div = document.createElement('template');
 			return !!div.content;
+		})(),
+
+		createContextualFragment: (function() {
+			try {
+				document.createRange().createContextualFragment("Hello");
+				return true;
+			} catch(e) {
+				return false;
+			}
 		})()
-	}*/
+	}
 
 });
 
