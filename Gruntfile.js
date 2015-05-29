@@ -6,7 +6,10 @@ module.exports = function(grunt) {
 		server: grunt.file.readJSON('package.json'),
 
 		src: {
-			client: [ 'client/cxl.js', 'client/cxl-fire.js', 'client/cxl-ui.js' ]
+			client: [
+				'client/cxl.js', 'client/cxl-binding.js',
+				'client/cxl-fire.js', 'client/cxl-ui.js'
+			]
 		},
 
 		clean: {
@@ -44,29 +47,6 @@ module.exports = function(grunt) {
 					]
 				}
 			},
-
-			fonts: {
-				files: {
-					'dist/glyphicons-halflings-regular.woff2':
-						'bower_components/bootstrap/fonts/glyphicons-halflings-regular.woff2',
-					'dist/glyphicons-halflings-regular.woff':
-						'bower_components/bootstrap/fonts/glyphicons-halflings-regular.woff',
-					'dist/glyphicons-halflings-regular.ttf':
-						'bower_components/bootstrap/fonts/glyphicons-halflings-regular.ttf',
-					'dist/glyphicons-halflings-regular.eot':
-						'bower_components/bootstrap/fonts/glyphicons-halflings-regular.eot',
-					'dist/glyphicons-halflings-regular.svg':
-						'bower_components/bootstrap/fonts/glyphicons-halflings-regular.svg'
-				}
-			},
-
-			/*server: {
-				files: {
-					'dist/<%=server.name%>.js': [ 'server/cxl.js' ],
-					'dist/<%=server.name%>.dbg.js': [
-						'server/cxl.js', 'src/cxl-debug.js' ]
-				}
-			},*/
 
 			tpl: {
 
@@ -171,7 +151,6 @@ module.exports = function(grunt) {
 						'bower_components/bootstrap/dist/js/bootstrap.js',
 						'bower_components/lodash/lodash.js',
 						'bower_components/backbone/backbone.js',
-						'bower_components/backbone-validation/dist/backbone-validation.js',
 						'bower_components/firebase/firebase.js',
 						'<%= src.client %>'
 					]},

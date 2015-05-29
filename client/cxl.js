@@ -4,38 +4,6 @@
 (function(window, $, _, Backbone) {
 "use strict";
 
-// Use Mustache templates
-_.templateSettings.escape = /\{\{(.+?)\}\}/g;
-
-function Module(options)
-{
-	_.extend(this, options);
-	this.initialize();
-
-	if (this.ready)
-		$(this.ready.bind(this));
-}
-
-_.extend(Module.prototype, {
-
-	name: null,
-
-	/**
-	 * Throws an error.
-	 */
-	error: function(msg)
-	{
-		throw new Error('[' + this.name + '] ' + msg);
-	},
-
-	// Disable login in production.
-	log: function() { },
-
-	ready: null
-
-});
-
-
 /**
  * Global router. By default it will only support
  * one level/state.
@@ -101,19 +69,13 @@ _.extend(View, {
 	}
 });
 
-_.extend(View.prototype, {
+_.extend(View.prototype, Backbone.Events, {
 
 	/// {function(el)}
 	initialize: null,
 
 	/// {function(el)
 	render: null,
-
-	/// {function(err)}
-	error: null,
-
-	/// {cxl.Binding|object}
-	binding: null,
 
 	/// Current View Value
 	value: null,
@@ -138,35 +100,45 @@ _.extend(View.prototype, {
 		view = this
 	;
 		if (view.template)
-			view.loadTemplate(view.template);
-
-		if (view.initialize)
-		    view.initialize(view.$el, args);
-
-		if (_.isPlainObject(view.binding))
 		{
-			view.binding.el = view;
-			view.binding = view.loadBinding(view.$el, view.binding);
+			view.loadTemplate(view.template);
+			view.template = cxl.compile(view.el, view);
 		}
 
-		if (view.template)
-			view.template = cxl.compile(view.el, view.ref, view);
-
-		if (view.render)
-			view.render(view.$el);
+		if (view.initialize)
+		    view.initialize(view.$el, args, view.ref);
 	},
 
-	loadBinding: function(el, binding)
+	val: function()
 	{
-		return new cxl.Binding(binding);
+		return this.value;
 	},
 
-	val: function(value)
+	child: function(childPath)
 	{
-		if (arguments.length===0)
-			return this.value;
+		this.ref.child(childPath);
+	},
 
-		this.value = value;
+	set: function(value, onComplete)
+	{
+		var err;
+
+		if (this.value !== value)
+		{
+			this.value = value;
+
+			if (this.validate)
+				err = this.validate(value);
+
+			if (!err && this.render)
+				this.render(value);
+
+			if (onComplete)
+				onComplete(err);
+
+			this.trigger('value', this);
+		}
+
 		return this;
 	},
 
@@ -174,8 +146,6 @@ _.extend(View.prototype, {
 	{
 		if (this.template)
 			this.template.destroy();
-		if (this.binding)
-			this.binding.unbind();
 	},
 
 	loadTemplate: function(template)
@@ -214,13 +184,41 @@ var Route = View.extend({
 
 });
 
+// TODO See if its worth it to actually have modules.
+function Module(options)
+{
+	_.extend(this, options);
+	this.initialize();
+
+	if (this.ready)
+		$(this.ready.bind(this));
+}
+
+_.extend(Module.prototype, {
+
+	name: null,
+
+	/**
+	 * Throws an error.
+	 */
+	error: function(msg)
+	{
+		throw new Error('[' + this.name + '] ' + msg);
+	},
+
+	// Disable login in production.
+	log: function() { },
+
+	ready: null
+
+});
+
 /** @namespace */
 var cxl = window.cxl = new Module({
 
 	name: 'cxl',
 
 	templates: {},
-	views: {},
 	router: null,
 
 	Module: Module,
@@ -248,7 +246,10 @@ var cxl = window.cxl = new Module({
 		this.history = Backbone.history;
 		// TODO better content loading for router
 		this.router.$content = this.$content;
+	},
 
+	start: function()
+	{
 		Backbone.history.start();
 	},
 
@@ -269,17 +270,18 @@ var cxl = window.cxl = new Module({
 
 	directive: function(name, fn)
 	{
+		if (fn===undefined)
+			return cxl.templateCompiler.directives[name];
+
 		var d = fn;
 
 		if (_.isPlainObject(fn))
-			d = function(options)
+			fn = cxl.View.extend(fn);
+
+		if (fn.prototype instanceof cxl.View)
+			d = function(el, param, scope)
 			{
-				return new cxl.View(_.extend(options, fn));
-			};
-		else if (fn.prototype instanceof cxl.View)
-			d = function(options)
-			{
-				return fn.create(options);
+				return fn.create({ el: el, parameters: param, ref: scope });
 			};
 
 		cxl.templateCompiler.directives[name] = d;

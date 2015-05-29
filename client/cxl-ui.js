@@ -180,21 +180,27 @@ cxl.ui.Form = cxl.View.extend({
 
 });
 
+cxl.ui.Content = cxl.View.extend({
+	render: function() {
+
+	}
+});
+
+cxl.directive('submit', function(el, param, scope) {
+	// TODO event directives should return a destroy method.
+	el.addEventListener('submit', function(ev) {
+		scope[param](ev.target);
+		ev.preventDefault();
+	});
+});
+
 cxl.directive('switch', {
-	val: function(val)
+	render: function(val)
 	{
 		this.$el.parent().toggleClass('active', val===true);
 	}
 });
 
-cxl.directive('attribute', {
-
-	val: function(val)
-	{
-		this.$el.attr(this.parameters, val);
-	}
-
-});
 
 cxl.directive('list', cxl.ui.List);
 

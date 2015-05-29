@@ -7,7 +7,7 @@
 	"trailing":true,
 	"maxdepth":3,
 	"freeze": true,
-	"maxparams": 4,
+	"maxparams": 5,
 	"browser": true,
 	"globals": { "cxl": false }
 }
