@@ -35,7 +35,7 @@ var Router = Backbone.Router.extend({
 			this.$content.children().addClass('leave');
 
 			if (this.currentView)
-				this.currentView.destroy();
+				this.currentView.unbind();
 
 			var view = this.currentView =
 				new Callback({ parameters: args });
@@ -80,6 +80,9 @@ _.extend(View.prototype, Backbone.Events, {
 	/// Current View Value
 	value: null,
 
+	/// Validator
+	validate: null,
+
 	_ensureElement: function()
 	{
 		this.setElement(this.el ?
@@ -116,7 +119,7 @@ _.extend(View.prototype, Backbone.Events, {
 
 	child: function(childPath)
 	{
-		this.ref.child(childPath);
+		return this.ref.child(childPath);
 	},
 
 	set: function(value, onComplete)
@@ -142,10 +145,11 @@ _.extend(View.prototype, Backbone.Events, {
 		return this;
 	},
 
-	destroy: function()
+	unbind: function()
 	{
 		if (this.template)
 			this.template.destroy();
+		this.off();
 	},
 
 	loadTemplate: function(template)

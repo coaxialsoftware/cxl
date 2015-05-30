@@ -146,7 +146,7 @@ QUnit.test('cxl.View#destroy', function(a) {
 var
 	v = new cxl.View({  })
 ;
-	v.destroy();
+	v.unbind();
 	a.ok(v);
 });
 

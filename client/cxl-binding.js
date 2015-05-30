@@ -1,5 +1,5 @@
 
-(function(cxl, _) {
+(function(cxl, _, $) {
 
 /**
  * Two way Binding.
@@ -233,39 +233,88 @@ cxl.directive('ref', function(el, param, scope) {
 });
 
 cxl.directive('class', {
-	set: function(val) { this.$el.toggleClass(this.parameters, val); }
+	render: function(val) { this.$el.toggleClass(this.parameters, val); }
 });
 
 cxl.directive('attribute', {
-	set: function(val) { this.$el.attr(this.parameters, val); }
+	render: function(val) { this.$el.attr(this.parameters, val); }
 });
 
 cxl.directive('local', function(el, param, scope) {
 	return scope[param](el, param, scope);
 });
 
+cxl.directive('call', {
+	set: function() {
+		this.ref[this.parameters].apply(this.ref, arguments);
+	}
+});
+
+cxl.directive('html', {
+	render: function(val)
+	{
+		if (this.parameters && this.ref)
+			val = this.ref[this.parameters](val);
+
+		this.$el.html(val);
+	}
+});
+
 cxl.directive('if', {
 	initialize: function(el) {
-		this.marker = document.createComment('bind');
+		this.marker = $(document.createComment('bind'));
 		el.before(this.marker).detach();
 	},
-	set: function(v) {
-		if (v.val())
-			this.marker.insertAfter(this.el);
+	render: function(val) {
+		if (val)
+			this.marker.after(this.el);
 		else
 			this.$el.detach();
 	}
 });
 
+cxl.directive('unless', {
+	initialize: function() {
+		this.marker = $(document.createComment('bind'));
+	},
+	render: function(val) {
+		if (val)
+			this.$el.detach();
+		else
+			this.marker.after(this.el);
+	}
+});
+
+// Binds to View DOM element event
+cxl.directive('on', {
+	initialize: function(el, event)
+	{
+		var me = this;
+
+		el.on(event, function(ev) {
+			me.value = arguments;
+			me.event = ev;
+			me.trigger('value', me);
+		});
+	}
+});
+
+// Binds to View event
 cxl.directive('event', {
 	initialize: function(el, event, scope)
 	{
 		scope.on(event, function(ev) {
-			this.value = ev;
+			this.value = arguments;
+			this.event = ev;
 			this.trigger('value', this);
 		}, this);
 	}
 });
 
+cxl.directive('toggleClass', {
+	render: function() {
+		this.$el.toggleClass(this.parameters);
+	}
+});
 
-})(this.cxl, this._);
+})(this.cxl, this._, this.jQuery);

@@ -5,6 +5,8 @@
 (function(cxl, Backbone, _) {
 "use strict";
 
+var assert = window.console.assert.bind(window.console);
+
 function override(obj, fn, pre, post)
 {
 	var old = obj[fn];
@@ -71,6 +73,13 @@ override(cxl.Router.prototype, 'execute', function(route, args) {
 	dbg('Executing route.', route, args);
 });
 
+//
+// cxl.Route
+//
+override(cxl.Route.prototype, 'unbind', function() {
+	dbg('Destroying route.', this);
+});
+
 
 // Backbone.History
 override(Backbone.History.prototype, 'loadUrl', null,
@@ -82,6 +91,11 @@ override(Backbone.History.prototype, 'loadUrl', null,
 			dbg('Route "' + fragment + '" not found');
 	}
 );
+
+override(cxl.Binding.prototype, 'bind', function() {
+	assert(this.refA);
+	assert(this.refB);
+});
 
 
 })(this.cxl, this.Backbone, this._);

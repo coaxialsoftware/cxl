@@ -116,14 +116,26 @@ cxl.Field = cxl.View.extend({
 
 cxl.ui = { };
 
+cxl.ui.ListItem = cxl.View;
+
 cxl.ui.List = cxl.View.extend({
+
+	ref: null,
 
 	// Item Template
 	itemTemplate: null,
 
+	// Item View Class
+	itemView: cxl.ui.ListItem,
+
+	items: null,
+
 	load: function()
 	{
-		var html = this.el.innerHTML;
+	var
+		html = this.el.innerHTML,
+		ref = this.ref
+	;
 
 		if (!this.itemTemplate && html)
 		{
@@ -131,18 +143,47 @@ cxl.ui.List = cxl.View.extend({
 			this.itemTemplate = html;
 		}
 
+		this.items = {};
+
 		cxl.View.prototype.load.apply(this, arguments);
+
+		ref.on('child_added', this.onAdd, this);
+		ref.on('child_removed', this.onRemove, this);
+		ref.on('child_moved', this.onMove, this);
 	},
 
-	onAdd: function(ev, snap)
+	unbind: function()
 	{
-		var item = cxl.compile(this.itemTemplate, snap.ref(), this);
+		_.invoke(this.items, 'unbind');
+		this.off();
+		this.ref.off('child_added');
+		this.ref.off('child_removed');
+		this.ref.off('child_moved');
+	},
+
+	onAdd: function(snap)
+	{
+		var item = new this.itemView({
+			template: this.itemTemplate,
+			ref: snap.ref()
+		});
+
+		this.items[snap.key()] = item;
+		item.setElement($(item.el).children());
 		this.$el.append(item.el);
 	},
 
-	onRemove: function()
+	onRemove: function(snap)
 	{
-		window.console.log('remove', arguments);
+	var
+		key = snap.key(),
+		item = this.items[key]
+	;
+		if (item)
+		{
+			delete this.items[key];
+			item.$el.remove();
+		}
 	},
 
 	onMove: function()
