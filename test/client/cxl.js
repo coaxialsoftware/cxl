@@ -7,6 +7,14 @@
 
 QUnit.module('cxl');
 
+QUnit.test('cxl.Router', function(a) {
+	a.ok(!cxl.History.started);
+	cxl.router.refresh();
+	a.ok(cxl.History.started);
+	cxl.router.refresh();
+	a.ok(cxl.History.started);
+});
+
 QUnit.test('cxl.error', function(a) {
 	a.throws(function() { cxl.error('Test'); });
 });
@@ -35,6 +43,20 @@ var
 		a.equal(c, 'world');
 		done();
 	});
+});
+
+QUnit.test('cxl.go', function(a) {
+	cxl.history.stop();
+	cxl.go(a.test.testId);
+	a.ok(window.location.hash, a.test.testId);
+});
+
+QUnit.test('cxl.start', function(a) {
+
+	cxl.history.stop();
+	cxl.start();
+	a.ok(cxl.History.started);
+
 });
 
 /*
@@ -144,10 +166,33 @@ var
 
 QUnit.test('cxl.View#destroy', function(a) {
 var
-	v = new cxl.View({  })
+	v = new cxl.View()
 ;
 	v.unbind();
 	a.ok(v);
+});
+
+QUnit.test('cxl.View#initialize', function(a) {
+var
+	done = a.async()
+;
+	new cxl.View({
+		initialize: function(el)
+		{
+			a.ok(el);
+			done();
+		}
+	});
+});
+
+QUnit.test('cxl.View#set', function(a) {
+var
+	view = new cxl.View()
+;
+	a.ok(!view.value);
+	view.set('hello');
+	view.set('hello');
+	a.equal(view.value, 'hello');
 });
 
 QUnit.test('cxl.View.create', function(a) {
@@ -172,7 +217,6 @@ var
 		resolve: function() { return { hello: 'world' }; }
 	})
 ;
-	console.log(route.resolve);
 	a.equal(route.resolve.hello, 'world');
 });
 

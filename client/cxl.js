@@ -23,9 +23,9 @@ var Router = Backbone.Router.extend({
 	refresh: function()
 	{
 		if (Backbone.History.started)
-			Backbone.history.stop();
+			cxl.history.stop();
 
-		Backbone.history.start();
+		cxl.history.start();
 	},
 
 	execute: function(Callback, args)
@@ -85,10 +85,7 @@ _.extend(View.prototype, Backbone.Events, {
 
 	_ensureElement: function()
 	{
-		this.setElement(this.el ?
-			_.result(this, 'el') :
-			document.createDocumentFragment()
-		);
+		this.setElement(this.el || document.createDocumentFragment());
 	},
 
 	setElement: function(el)
@@ -109,17 +106,12 @@ _.extend(View.prototype, Backbone.Events, {
 		}
 
 		if (view.initialize)
-		    view.initialize(view.$el, args, view.ref);
+		    view.initialize(view.$el, args, view.parent);
 	},
 
 	val: function()
 	{
 		return this.value;
-	},
-
-	child: function(childPath)
-	{
-		return this.ref.child(childPath);
 	},
 
 	set: function(value, onComplete)
@@ -157,7 +149,12 @@ _.extend(View.prototype, Backbone.Events, {
 		// Is it a documentFragment?
 		// TODO should we assume it is empty?
 		if (this.el.nodeType===11)
+		{
+			if (this.el.children.length)
+				this.$el.children().remove();
+
 			this.$el.append(template);
+		}
 		else
 			this.$el.html(template);
 	}
@@ -193,9 +190,6 @@ function Module(options)
 {
 	_.extend(this, options);
 	this.initialize();
-
-	if (this.ready)
-		$(this.ready.bind(this));
 }
 
 _.extend(Module.prototype, {
@@ -213,7 +207,10 @@ _.extend(Module.prototype, {
 	// Disable login in production.
 	log: function() { },
 
-	ready: null
+	ready: function(fn)
+	{
+		$(fn);
+	}
 
 });
 
@@ -229,13 +226,17 @@ var cxl = window.cxl = new Module({
 	Router: Router,
 	Route: Route,
 	View: View,
+	History: Backbone.History,
 
 	initialize: function()
 	{
 		this.router	= new Router();
+		this.history = Backbone.history;
+
+		this.ready(this.onReady.bind(this));
 	},
 
-	ready: function()
+	onReady: function()
 	{
 		var $content = this.$content || $('[cxl-content]');
 
@@ -247,7 +248,6 @@ var cxl = window.cxl = new Module({
 		});
 
 		this.$body.addClass('cxl-ready');
-		this.history = Backbone.history;
 		// TODO better content loading for router
 		this.router.$content = this.$content;
 	},
@@ -260,7 +260,7 @@ var cxl = window.cxl = new Module({
 	route: function(path, def)
 	{
 		var view = typeof(def)==='function' ?
-			def.bind(this) : view = cxl.Route.extend(def);
+			def.bind(this) : cxl.Route.extend(def);
 
 		cxl.router.route(path, view);
 
@@ -285,7 +285,11 @@ var cxl = window.cxl = new Module({
 		if (fn.prototype instanceof cxl.View)
 			d = function(el, param, scope)
 			{
-				return fn.create({ el: el, parameters: param, ref: scope });
+				return fn.create({
+					el: el,
+					parameters: param,
+					parent: scope
+				});
 			};
 
 		cxl.templateCompiler.directives[name] = d;
@@ -339,9 +343,6 @@ var cxl = window.cxl = new Module({
 	}
 
 });
-
-
-
 
 
 })(this, this.jQuery, this._, this.Backbone);

@@ -6,20 +6,20 @@ var
 	fb = new Firebase('https://cxl-test.firebaseio.com')
 ;
 
-QUnit.module('cxl-fire');
+QUnit.module('cxl-binding');
 
 QUnit.test('cxl.Binding#constructor', function(a) {
 var
 	done = a.async(),
 	el = new cxl.View(),
-	ref = fb.child('cxl-binding/string'),
+	ref = fb.child('cxl-binding/text'),
 	b = cxl.binding({ refA: el, refB: ref })
 ;
 	a.ok(b);
 	a.equal(el.value, null);
 
 	ref.on('value', function() {
-		a.equal(el.value, 'string');
+		a.equal(el.value, 'cxl');
 		b.unbind();
 		done();
 	});
@@ -33,6 +33,8 @@ var
 ;
 	b.unbind();
 	a.ok(b);
+	a.ok(!b.refA);
+	a.ok(!b.refB);
 });
 
 QUnit.test('cxl.Binding write', function(a) {
@@ -149,13 +151,12 @@ QUnit.test('cxl.TemplateCompiler - attribute directive', function(a) {
 
 QUnit.test('cxl.TemplateCompiler - class directive', function(a) {
 	var tpl;
-	var div = $('<div><div &=".' + a.test.testId + ':&cxl-binding"></div></div>');
+	var div = $('<div><div &=".' + a.test.testId + ':const(bool)"></div></div>');
 
-	cxl.directive('class', { template: 'Hello' });
-	tpl = cxl.compile(div[0], fb);
+	tpl = cxl.compile(div[0], { bool: true });
 
 	a.ok(tpl);
-	a.equal(div.children().html(), 'Hello');
+	a.ok(div.children().hasClass(a.test.testId));
 
 	tpl.destroy();
 });

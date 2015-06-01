@@ -44,7 +44,7 @@ cxl.log = function(msg)
 	if (arguments.length>1)
 	{
 		console.groupCollapsed(single);
-		_.each(arguments, console.log, console);
+		_.each(arguments, function(val) { console.log(val); });
 		console.groupEnd();
 	} else
 		console.log(single);
@@ -76,8 +76,8 @@ override(cxl.Router.prototype, 'execute', function(route, args) {
 //
 // cxl.Route
 //
-override(cxl.Route.prototype, 'unbind', function() {
-	dbg('Destroying route.', this);
+override(cxl.Route.prototype, 'unbind', null, function() {
+	dbg('Destroying route.', this, bindingCount + ' bindings remaining.');
 });
 
 
@@ -92,9 +92,40 @@ override(Backbone.History.prototype, 'loadUrl', null,
 	}
 );
 
+//
+// cxl.Binding
+//
+var bindingCount = 0;
+
 override(cxl.Binding.prototype, 'bind', function() {
 	assert(this.refA);
 	assert(this.refB);
+	bindingCount++;
+});
+
+override(cxl.Binding.prototype, 'unbind', function() {
+	bindingCount--;
+});
+
+//
+// cxl.TemplateCompiler
+//
+override(cxl.TemplateCompiler.prototype, 'compile', null,
+function(result, el, scope) {
+	var views=0;
+
+	_.each(result.bindings, function(v) { if (v instanceof cxl.View) views++; });
+
+	dbg('Template compiled. ' + views + ' Views, ' +
+		(result.bindings.length-views) + ' Bindings (Total ' +
+		bindingCount + ').',
+		el, scope, result.__parsed, result.bindings
+	);
+});
+
+override(cxl.TemplateCompiler.prototype, 'bindElement', function(el, b, result) {
+	var p = result.__parsed = result.__parsed || [];
+	p.push(b[0]);
 });
 
 

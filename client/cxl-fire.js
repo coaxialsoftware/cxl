@@ -50,8 +50,25 @@ _.extend(cxl.Binding, {
 });
 */
 
+function findRef(scope)
+{
+	var result;
+
+	while (!result && (scope = scope.parent))
+		result = scope.ref;
+
+	return result;
+}
 
 cxl.Model = Firebase;
+
+cxl.directive('ref', function(el, param, scope) {
+	// Find _ref in scope.
+	// If not in scope find in parents and set to current scope
+	var ref = scope.ref || findRef(scope);
+
+	return param ? ref.child(param) : ref;
+});
 
 })(this.cxl, this._, this.Firebase);
 

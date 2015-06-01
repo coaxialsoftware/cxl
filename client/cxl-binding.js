@@ -6,7 +6,9 @@
  */
 cxl.Binding = function(options)
 {
-	_.extend(this, options);
+	this.refA = options.refA;
+	this.refB = options.refB;
+	this.once = options.once;
 
 	this.onComplete = this._onComplete.bind(this);
 	this.bind();
@@ -25,37 +27,23 @@ _.extend(cxl.Binding.prototype, {
 	refB: null,
 
 	/**
-	 * Event to listen to for refA
-	 */
-	eventA: 'value',
-
-	/**
-	 * Event to listen to for refB
-	 */
-	eventB: 'value',
-
-	/**
 	 * Bind only once
 	 */
 	once: false,
 
 	unbind: function()
 	{
-		this.refA.off(this.eventA, this.onRefA, this);
-		this.refB.off(this.eventB, this.onRefB, this);
+		this.refA.off('value', this.onRefA, this);
+		this.refB.off('value', this.onRefB, this);
+		this.refA = this.refB = null;
 	},
 
 	bind: function()
 	{
 		var method = this.once ? 'once': 'on';
 
-		this.refA[method](this.eventA, this.onRef.bind(this, this.refB));
-		this.refB[method](this.eventB, this.onRef.bind(this, this.refA));
-	},
-
-	destroy: function()
-	{
-		this.unbind();
+		this.refA[method]('value', this.onRef.bind(this, this.refB));
+		this.refB[method]('value', this.onRef.bind(this, this.refA));
 	},
 
 	onRef: function(dest, ref)
@@ -78,7 +66,7 @@ _.extend(cxl.Binding.prototype, {
 		{
 			if (this.refA.trigger)
 				this.refA.trigger('error', err);
-			if (this.refB.trigger)
+			if (this.refB && this.refB.trigger)
 				this.refB.trigger('error', err);
 		}
 	}
@@ -112,10 +100,7 @@ _.extend(cxl.CompiledTemplate.prototype, {
 });
 
 /**
- * Binds DOM template to a Firebase ref.
- *
- * &="ref"    Creates a cxl.Binding object
- *            [type:]ref or @attr:ref
+ * Creates References and Bindings for a DOM element.
  */
 cxl.TemplateCompiler = function()
 {
@@ -203,6 +188,7 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		el.removeAttribute('&');
 
 		// TODO do we need this lastIndex reset?
+		this.bindRegex.lastIndex = 0;
 		while ((parsed = this.bindRegex.exec(prop)))
 			this.bindElement(el, parsed, result);
 	},
@@ -226,14 +212,18 @@ _.extend(cxl.TemplateCompiler.prototype, {
 
 cxl.binding = function(op) { return new cxl.Binding(op); };
 cxl.templateCompiler = new cxl.TemplateCompiler();
-cxl.compile = function(el, local) { return cxl.templateCompiler.compile(el, local); };
-
-cxl.directive('ref', function(el, param, scope) {
-	return param ? scope.child(param) : scope;
-});
+cxl.compile = function(el, scope) { return cxl.templateCompiler.compile(el, scope); };
 
 cxl.directive('class', {
 	render: function(val) { this.$el.toggleClass(this.parameters, val); }
+});
+
+cxl.directive('const', {
+	on: function()
+	{
+		cxl.View.prototype.on.apply(this, arguments);
+		this.set(_.result(this.parent, this.parameters));
+	}
 });
 
 cxl.directive('attribute', {
@@ -246,15 +236,15 @@ cxl.directive('local', function(el, param, scope) {
 
 cxl.directive('call', {
 	set: function() {
-		this.ref[this.parameters].apply(this.ref, arguments);
+		this.parent[this.parameters].apply(this.parent, arguments);
 	}
 });
 
 cxl.directive('html', {
 	render: function(val)
 	{
-		if (this.parameters && this.ref)
-			val = this.ref[this.parameters](val);
+		if (this.parameters && this.parent)
+			val = this.parent[this.parameters](val);
 
 		this.$el.html(val);
 	}
@@ -274,8 +264,9 @@ cxl.directive('if', {
 });
 
 cxl.directive('unless', {
-	initialize: function() {
+	initialize: function(el) {
 		this.marker = $(document.createComment('bind'));
+		el.before(this.marker);
 	},
 	render: function(val) {
 		if (val)
@@ -315,6 +306,12 @@ cxl.directive('toggleClass', {
 	render: function() {
 		this.$el.toggleClass(this.parameters);
 	}
+});
+
+cxl.directive('compile', function(el, param, scope)
+{
+	var newScope = param ? _.result(scope, param) : scope;
+	cxl.compile(el, newScope);
 });
 
 })(this.cxl, this._, this.jQuery);
