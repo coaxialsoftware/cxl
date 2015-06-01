@@ -122,7 +122,7 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		'&': 'ref'
 	},
 
-	bindRegex: /([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?(?:(::?)([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?)?/g,
+	bindRegex: /(?:([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?(?:(::?)([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?)?)+/,
 
 	createFragment: null,
 
@@ -187,10 +187,14 @@ _.extend(cxl.TemplateCompiler.prototype, {
 	;
 		el.removeAttribute('&');
 
-		// TODO do we need this lastIndex reset?
 		this.bindRegex.lastIndex = 0;
-		while ((parsed = this.bindRegex.exec(prop)))
+		parsed = this.bindRegex.exec(prop);
+
+		while (parsed.length)
+		{
 			this.bindElement(el, parsed, result);
+			parsed.splice(0, 8);
+		}
 	},
 
 	compile: function(el, scope)
