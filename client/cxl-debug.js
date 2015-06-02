@@ -5,7 +5,8 @@
 (function(cxl, Backbone, _) {
 "use strict";
 
-var assert = window.console.assert.bind(window.console);
+var console = window.console;
+var assert = console.assert.bind(window.console);
 
 function override(obj, fn, pre, post)
 {
@@ -30,27 +31,37 @@ function override(obj, fn, pre, post)
 	};
 }
 
-function dbg()
-{
-	cxl.log.apply(cxl, arguments);
-}
 
-cxl.log = function(msg)
+function Notify(msg)
 {
-	var console = window.console;
-	var name = this.name;
-	var single = typeof(msg)==='string' ? '[' + name + '] ' + msg : msg;
-
+var
+	method = this,
+	single = typeof(msg)==='string' ? '[cxl] ' + msg : msg
+;
 	if (arguments.length>1)
 	{
 		console.groupCollapsed(single);
-		_.each(arguments, function(val) { console.log(val); });
+		_.each(arguments, function(v) { method(v); });
 		console.groupEnd();
 	} else
-		console.log(single);
+		this(single);
 
 	return cxl;
-};
+}
+
+
+function dbg()
+{
+	return Notify.apply(console.log.bind(console), arguments);
+}
+
+function warn()
+{
+	return Notify.apply(console.warn.bind(console), arguments);
+}
+
+cxl.warn = warn;
+cxl.log = dbg;
 
 override(cxl, 'include', function(module) {
 	dbg('Including module ' + module);
@@ -70,14 +81,17 @@ override(cxl.Router.prototype, 'route', function(path) {
 });
 
 override(cxl.Router.prototype, 'execute', function(route, args) {
-	dbg('Executing route.', route, args);
+	dbg('Executing route "' + route.prototype.path + '".', route, args);
 });
 
 //
 // cxl.Route
 //
 override(cxl.Route.prototype, 'unbind', null, function() {
-	dbg('Destroying route.', this, bindingCount + ' bindings remaining.');
+	dbg('Destroying route "' + this.path + '".', this, bindingCount + ' bindings remaining.');
+
+	if (bindingCount!==0)
+		warn(bindingCount + ' bindings not destroyed.');
 });
 
 

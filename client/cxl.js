@@ -100,13 +100,13 @@ _.extend(View.prototype, Backbone.Events, {
 		view = this
 	;
 		if (view.template)
-		{
 			view.loadTemplate(view.template);
-			view.template = cxl.compile(view.el, view);
-		}
 
 		if (view.initialize)
 		    view.initialize(view.$el, args, view.parent);
+
+		if (view.template)
+			view.template = cxl.compile(view.el, view);
 	},
 
 	val: function()
@@ -261,6 +261,8 @@ var cxl = window.cxl = new Module({
 	{
 		var view = typeof(def)==='function' ?
 			def.bind(this) : cxl.Route.extend(def);
+
+		view.prototype.path = path;
 
 		cxl.router.route(path, view);
 

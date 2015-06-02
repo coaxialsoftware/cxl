@@ -244,11 +244,29 @@ cxl.directive('call', {
 	}
 });
 
+cxl.directive('text', {
+	render: function(val)
+	{
+		if (this.parameters && this.parent)
+		{
+			var fn = this.parent[this.parameters];
+			val = typeof(fn)==='function' ? fn.call(this.parent, val) :
+				fn;
+		}
+
+		this.$el.html(_.escape(val));
+	}
+});
+
 cxl.directive('html', {
 	render: function(val)
 	{
 		if (this.parameters && this.parent)
-			val = this.parent[this.parameters](val);
+		{
+			var fn = this.parent[this.parameters];
+			val = typeof(fn)==='function' ? fn.call(this.parent, val) :
+				fn;
+		}
 
 		this.$el.html(val);
 	}
@@ -291,6 +309,17 @@ cxl.directive('on', {
 			me.event = ev;
 			me.trigger('value', me);
 		});
+	}
+});
+
+cxl.directive('ready', {
+	initialize: function(el, event, scope)
+	{
+		scope.on('ready', function(ev) {
+			this.value = arguments;
+			this.event = ev;
+			this.trigger('value', this);
+		}, this);
 	}
 });
 
