@@ -8,11 +8,11 @@
 QUnit.module('cxl');
 
 QUnit.test('cxl.Router', function(a) {
-	a.ok(!cxl.History.started);
+	a.ok(!cxl.router.started);
 	cxl.router.refresh();
-	a.ok(cxl.History.started);
+	a.ok(cxl.router.started);
 	cxl.router.refresh();
-	a.ok(cxl.History.started);
+	a.ok(cxl.router.started);
 });
 
 QUnit.test('cxl.error', function(a) {
@@ -52,11 +52,9 @@ QUnit.test('cxl.go', function(a) {
 });
 
 QUnit.test('cxl.start', function(a) {
-
 	cxl.history.stop();
 	cxl.start();
-	a.ok(cxl.History.started);
-
+	a.ok(cxl.router.started);
 });
 
 /*
@@ -177,7 +175,13 @@ var
 	done = a.async()
 ;
 	new cxl.View({
+		el: 'body',
 		initialize: function(el)
+		{
+			a.ok(el);
+		},
+
+		render: function(el)
 		{
 			a.ok(el);
 			done();
@@ -193,13 +197,6 @@ var
 	view.set('hello');
 	view.set('hello');
 	a.equal(view.value, 'hello');
-});
-
-QUnit.test('cxl.View.create', function(a) {
-var
-	view = cxl.View.create({ el: '<div>', template: 'Hello' })
-;
-	a.equal(view.$el.html(), 'Hello');
 });
 
 QUnit.module('cxl.Route');

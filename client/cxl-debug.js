@@ -80,11 +80,13 @@ override(cxl, 'onReady', null, function() {
 //
 // Router
 //
-override(cxl.Router.prototype, 'route', function(path) {
+var Router = cxl.router.constructor;
+
+override(Router.prototype, 'route', function(path) {
 	dbg('Adding route "' + path + '"');
 });
 
-override(cxl.Router.prototype, 'execute', function(route, args) {
+override(Router.prototype, 'execute', function(route, args) {
 	dbg('Executing route "' + route.prototype.path + '".', route, args);
 });
 

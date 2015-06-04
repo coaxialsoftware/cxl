@@ -105,6 +105,7 @@ _.extend(cxl.CompiledTemplate.prototype, {
 cxl.TemplateCompiler = function()
 {
 	this.directives = {};
+	this.templates = {};
 
 	// TODO measure performance
 	this.createFragment = cxl.support.createContextualFragment ?
@@ -115,6 +116,8 @@ cxl.TemplateCompiler = function()
 _.extend(cxl.TemplateCompiler.prototype, {
 
 	directives: null,
+	templates: null,
+
 	shortcuts: {
 		'#': 'local',
 		'.': 'class',
@@ -126,6 +129,11 @@ _.extend(cxl.TemplateCompiler.prototype, {
 	registerShortcut: function(key, directive)
 	{
 		this.shortcuts[key] = directive;
+	},
+
+	registerTemplate: function(id, content)
+	{
+		return (this.templates[id] = content);
 	},
 
 	createFragment: null,
@@ -230,6 +238,12 @@ cxl.binding = function(op) { return new cxl.Binding(op); };
 cxl.templateCompiler = new cxl.TemplateCompiler();
 cxl.compile = function(el, scope) { return cxl.templateCompiler.compile(el, scope); };
 
+cxl.template = function(id)
+{
+	return cxl.templateCompiler.templates[id] ||
+		(cxl.templateCompiler.registerTemplate(id, document.getElementById(id).innerHTML));
+};
+
 //
 // CSS Directives
 //
@@ -287,6 +301,29 @@ cxl.directive('call', {
 	update: function(val, el, arg, parent) {
 		parent[arg].call(parent, val, el, arg);
 	}
+});
+
+function viewEventDirective(el, event, scope)
+{
+	return new cxl.View({
+		load: function()
+		{
+			var me = this;
+			this.listenTo(scope, event, function() {
+				me.set(arguments);
+			});
+		}
+	});
+}
+
+/**
+ * Binds to View event
+ */
+cxl.directive('event', viewEventDirective);
+
+cxl.directive('ready', function(el, param, scope)
+{
+	return viewEventDirective(el, 'ready', scope);
 });
 
 //
@@ -389,30 +426,6 @@ cxl.directive('submit', function(el, e, scope) {
 	return domEventDirective(el, 'submit', scope, e, true);
 });
 
-//
-// Event Directives
-//
-function eventDirective(el, event, scope)
-{
-	return new cxl.View({
-		initialize: function()
-		{
-			scope.on(event, function() {
-				this.set(arguments);
-			}, this);
-		}
-	});
-}
-
-/**
- * Binds to View event
- */
-cxl.directive('event', eventDirective);
-
-cxl.directive('ready', function(el, param, scope)
-{
-	return eventDirective(el, 'ready', scope);
-});
 
 //
 // Template Directives
