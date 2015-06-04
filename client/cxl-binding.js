@@ -118,11 +118,15 @@ _.extend(cxl.TemplateCompiler.prototype, {
 	shortcuts: {
 		'#': 'local',
 		'.': 'class',
-		'@': 'attribute',
-		'&': 'ref'
+		'@': 'attribute'
 	},
 
 	bindRegex: /(?:([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?(?:(::?)([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?)?)+/,
+
+	registerShortcut: function(key, directive)
+	{
+		this.shortcuts[key] = directive;
+	},
 
 	createFragment: null,
 
@@ -154,12 +158,20 @@ _.extend(cxl.TemplateCompiler.prototype, {
 	getRef: function(shortcut, name, param, el, scope)
 	{
 	var
-		directive = this.shortcuts[shortcut]
+		directive = this.shortcuts[shortcut],
+		ref
 	;
 		if (directive)
 			param = name;
+		else
+			directive = name;
 
-		return this.directives[directive || name](el, param, scope);
+		ref = this.directives[directive];
+
+		if (!ref)
+			throw new Error('Directive ' + directive + ' not found.');
+
+		return ref(el, param, scope);
 	},
 
 	bindElement: function(el, b, result)
@@ -218,133 +230,199 @@ cxl.binding = function(op) { return new cxl.Binding(op); };
 cxl.templateCompiler = new cxl.TemplateCompiler();
 cxl.compile = function(el, scope) { return cxl.templateCompiler.compile(el, scope); };
 
+//
+// CSS Directives
+//
 cxl.directive('class', {
-	render: function(val) { this.$el.toggleClass(this.parameters, val); }
+	update: function(val, el, cls) { el.toggleClass(cls, val); }
 });
 
-cxl.directive('const', {
-	on: function()
-	{
-		cxl.View.prototype.on.apply(this, arguments);
-		this.set(_.result(this.parent, this.parameters));
-	}
+cxl.directive('toggleClass', {
+	set: function(val, el, cls) { el.toggleClass(cls); }
 });
 
+//
+// Attribute Directives
+//
+
+/**
+ * Sets element attribute value
+ */
 cxl.directive('attribute', {
-	render: function(val) { this.$el.attr(this.parameters, val); }
+	update: function(val) { this.$el.attr(this.parameters, val); }
 });
 
+//
+// View Directives
+//
+
+/**
+ * Runs Local Directive
+ */
 cxl.directive('local', function(el, param, scope) {
 	return scope[param](el, param, scope);
 });
 
+function resultDirective(fn)
+{
+	return new cxl.View({
+		on: function()
+		{
+			cxl.View.prototype.on.apply(this, arguments);
+			this.set(fn());
+		}
+	});
+}
+
+cxl.directive('const', function(el, param, scope) {
+	return resultDirective(_.constant(_.result(scope, param)));
+});
+
+cxl.directive('result', function(el, param, scope)
+{
+	return resultDirective(_.result.bind(_, scope, param));
+});
+
 cxl.directive('call', {
-	set: function() {
-		this.parent[this.parameters].apply(this.parent, arguments);
+	update: function(val, el, arg, parent) {
+		parent[arg].call(parent, val, el, arg);
 	}
 });
 
-cxl.directive('text', {
-	render: function(val)
-	{
-		if (this.parameters && this.parent)
+//
+// DOM Content Directives
+//
+
+function jQueryDirective(el, arg, scope, method)
+{
+	return new cxl.View({
+		el: el,
+		update: function(val, el)
 		{
-			var fn = this.parent[this.parameters];
-			val = typeof(fn)==='function' ? fn.call(this.parent, val) :
-				fn;
-		}
+			if (arg && scope)
+			{
+				var fn = scope[arg];
+				val = typeof(fn)==='function' ? fn.call(scope, val) : fn;
+			}
 
-		this.$el.html(_.escape(val));
-	}
+			el[method](val);
+		}
+	});
+}
+
+cxl.directive('text', function(el, arg, scope)
+{
+	return jQueryDirective(el, arg, scope, 'text');
 });
 
-cxl.directive('html', {
-	render: function(val)
-	{
-		if (this.parameters && this.parent)
+cxl.directive('html', function(el, arg, scope)
+{
+	return jQueryDirective(el, arg, scope, 'html');
+});
+
+//
+// Marker Directives
+//
+function markerDirective(el, param, scope, def)
+{
+	var marker = $(document.createComment('bind'));
+	el.parentNode.insertBefore(marker[0], el);
+
+	def.el = el; def.parameters = param; def.parent = scope;
+	def.marker = marker;
+
+	return new cxl.View(def);
+}
+
+cxl.directive('if', function(el, param, scope)
+{
+	return markerDirective(el, param, scope, {
+		load: function(el) { el.detach(); },
+		update: function(val, el) {
+			return val ? this.marker.after(el) : el.detach();
+		}
+	});
+});
+
+cxl.directive('unless', function(el, param, scope) {
+	return markerDirective(el, param, scope, {
+		update: function(val, el) {
+			return val ? el.detach() : this.marker.after(el);
+		}
+	});
+});
+
+//
+// DOM Events
+//
+function domEventDirective(el, event, scope, param, prevent)
+{
+	var fn = param && cxl.prop(scope, param);
+
+	return new cxl.View({
+		el: el,
+		load: function(el)
 		{
-			var fn = this.parent[this.parameters];
-			val = typeof(fn)==='function' ? fn.call(this.parent, val) :
-				fn;
+			this.listenTo(el, event, function(ev) {
+				if (prevent)
+					ev.preventDefault();
+
+				if (fn)
+					fn(ev);
+				else
+					this.set(ev);
+			});
 		}
+	});
+}
 
-		this.$el.html(val);
-	}
+/**
+ * Binds to View DOM element event.
+ */
+cxl.directive('on', domEventDirective);
+
+cxl.directive('click', function(el, e, scope) {
+	return domEventDirective(el, 'click', scope, e, true);
 });
 
-cxl.directive('if', {
-	initialize: function(el) {
-		this.marker = $(document.createComment('bind'));
-		el.before(this.marker).detach();
-	},
-	render: function(val) {
-		if (val)
-			this.marker.after(this.el);
-		else
-			this.$el.detach();
-	}
+cxl.directive('submit', function(el, e, scope) {
+	return domEventDirective(el, 'submit', scope, e, true);
 });
 
-cxl.directive('unless', {
-	initialize: function(el) {
-		this.marker = $(document.createComment('bind'));
-		el.before(this.marker);
-	},
-	render: function(val) {
-		if (val)
-			this.$el.detach();
-		else
-			this.marker.after(this.el);
-	}
+//
+// Event Directives
+//
+function eventDirective(el, event, scope)
+{
+	return new cxl.View({
+		initialize: function()
+		{
+			scope.on(event, function() {
+				this.set(arguments);
+			}, this);
+		}
+	});
+}
+
+/**
+ * Binds to View event
+ */
+cxl.directive('event', eventDirective);
+
+cxl.directive('ready', function(el, param, scope)
+{
+	return eventDirective(el, 'ready', scope);
 });
 
-// Binds to View DOM element event
-cxl.directive('on', {
-	initialize: function(el, event)
-	{
-		var me = this;
-
-		el.on(event, function(ev) {
-			me.value = arguments;
-			me.event = ev;
-			me.trigger('value', me);
-		});
-	}
-});
-
-cxl.directive('ready', {
-	initialize: function(el, event, scope)
-	{
-		scope.on('ready', function(ev) {
-			this.value = arguments;
-			this.event = ev;
-			this.trigger('value', this);
-		}, this);
-	}
-});
-
-// Binds to View event
-cxl.directive('event', {
-	initialize: function(el, event, scope)
-	{
-		scope.on(event, function(ev) {
-			this.value = arguments;
-			this.event = ev;
-			this.trigger('value', this);
-		}, this);
-	}
-});
-
-cxl.directive('toggleClass', {
-	render: function() {
-		this.$el.toggleClass(this.parameters);
-	}
-});
+//
+// Template Directives
+//
 
 cxl.directive('compile', function(el, param, scope)
 {
 	var newScope = param ? _.result(scope, param) : scope;
 	cxl.compile(el, newScope);
 });
+
 
 })(this.cxl, this._, this.jQuery);

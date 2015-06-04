@@ -46,7 +46,7 @@ QUnit.test('cxl.directive - ref on child', function(a) {
 var
 	done = a.async(),
 	el = $('<div><div &="compile(b)">' +
-		'<div &="html:ref"></div></div>' +
+		'<div &="html:refval"></div></div>' +
 		'</div>'),
 	scope = {
 		ref: fb.child('cxl-binding/text'),

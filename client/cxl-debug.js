@@ -73,6 +73,10 @@ override(cxl, 'resolve', null, function(result) {
 	});
 });
 
+override(cxl, 'onReady', null, function() {
+	cxl.log('Framework initialized');
+});
+
 //
 // Router
 //

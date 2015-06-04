@@ -57,7 +57,7 @@ var
 ;
     _.extend(view, options);
     view._ensureElement();
-    view.load(args);
+    view.load(view.$el, args, view.parent);
 }
 
 _.extend(View, {
@@ -77,6 +77,9 @@ _.extend(View.prototype, Backbone.Events, {
 	/// {function(el)
 	render: null,
 
+	/// {funcion(val)}
+	update: null,
+
 	/// Current View Value
 	value: null,
 
@@ -94,19 +97,22 @@ _.extend(View.prototype, Backbone.Events, {
 		this.el  = this.$el[0];
 	},
 
-	load: function(args)
+	load: function(el, args, parent)
 	{
 	var
 		view = this
 	;
+		if (view.initialize)
+		    view.initialize(el, args, parent);
+
 		if (view.template)
 			view.loadTemplate(view.template);
 
-		if (view.initialize)
-		    view.initialize(view.$el, args, view.parent);
-
 		if (view.template)
 			view.template = cxl.compile(view.el, view);
+
+		if (view.render)
+			view.render(el, args, parent);
 	},
 
 	val: function()
@@ -125,8 +131,8 @@ _.extend(View.prototype, Backbone.Events, {
 			if (this.validate)
 				err = this.validate(value);
 
-			if (!err && this.render)
-				this.render(value);
+			if (!err && this.update)
+				this.update(value, this.$el, this.parameters, this.parent);
 
 			if (onComplete)
 				onComplete(err);
@@ -137,11 +143,31 @@ _.extend(View.prototype, Backbone.Events, {
 		return this;
 	},
 
+	stopListening: function()
+	{
+		_.invoke(this._listeningTo, 'call');
+
+		return this;
+	},
+
+	listenTo: function(obj, name, callback)
+	{
+	var
+		listeningTo = this._listeningTo || (this._listeningTo = []),
+		fn = callback.bind(this)
+	;
+		obj.on(name, fn);
+		listeningTo.push(obj.off.bind(obj, name, fn));
+
+		return this;
+	},
+
 	unbind: function()
 	{
 		if (this.template)
 			this.template.destroy();
-		this.off();
+
+		this.stopListening();
 	},
 
 	loadTemplate: function(template)
@@ -163,12 +189,19 @@ _.extend(View.prototype, Backbone.Events, {
 
 var Route = View.extend({
 
-	load: function(args)
+	constructor: function(op)
+	{
+		if (typeof(op)==='function')
+			op = { initialize: op };
+		View.call(this, op);
+	},
+
+	load: function(el, args, scope)
 	{
 	var
 		me = this,
 		resolve = me.resolve,
-		load = cxl.View.prototype.load.bind(me, args)
+		load = cxl.View.prototype.load.bind(me, el, args, scope)
 	;
 		if (typeof(resolve)==='function')
 			resolve = resolve.apply(me, args);
@@ -210,6 +243,8 @@ _.extend(Module.prototype, {
 	ready: function(fn)
 	{
 		$(fn);
+
+		return this;
 	}
 
 });
@@ -220,6 +255,7 @@ var cxl = window.cxl = new Module({
 	name: 'cxl',
 
 	templates: {},
+	routes: null,
 	router: null,
 
 	Module: Module,
@@ -231,6 +267,7 @@ var cxl = window.cxl = new Module({
 	initialize: function()
 	{
 		this.router	= new Router();
+		this.routes = {};
 		this.history = Backbone.history;
 
 		this.ready(this.onReady.bind(this));
@@ -254,19 +291,25 @@ var cxl = window.cxl = new Module({
 
 	start: function()
 	{
+		_.each(this.routes, this.loadRoute, this);
 		Backbone.history.start();
 	},
 
-	route: function(path, def)
+	loadRoute: function(def, path)
 	{
-		var view = typeof(def)==='function' ?
-			def.bind(this) : cxl.Route.extend(def);
+		def = typeof(def)==='function' ? def.call(this) : def;
+		var view = cxl.Route.extend(def);
 
 		view.prototype.path = path;
 
 		cxl.router.route(path, view);
 
 		return this;
+	},
+
+	route: function(path, def)
+	{
+		this.routes[path] = def;
 	},
 
 	view: function(def)
@@ -309,6 +352,40 @@ var cxl = window.cxl = new Module({
 	{
 		window.location.hash = path;
 		return this;
+	},
+
+	/**
+	 * TODO ?
+	 * looks for property prop in the current scope
+	 * and its parents until found and returns it.
+	 */
+	result: function(scope, prop)
+	{
+		var result;
+
+		do {
+			result = _.result(scope, prop);
+		} while (result===undefined && (scope = scope.parent));
+
+		return result;
+	},
+
+	/**
+	 * looks for property prop in the current scope
+	 * and its parents until found and returns it. If it is a function
+	 * it will return a binded function.
+	 */
+	prop: function(scope, prop)
+	{
+		var result=scope[prop];
+
+		while (result===undefined && (scope = scope.parent))
+			result = scope[prop];
+
+		if (typeof(result)==='function')
+			result = result.bind(scope);
+
+		return result;
 	},
 
 	resolve: function(a)

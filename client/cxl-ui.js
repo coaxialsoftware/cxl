@@ -120,8 +120,6 @@ cxl.ui.ListItem = cxl.View;
 
 cxl.ui.List = cxl.View.extend({
 
-	ref: null,
-
 	// Item Template
 	itemTemplate: null,
 
@@ -130,13 +128,11 @@ cxl.ui.List = cxl.View.extend({
 
 	items: null,
 
-	load: function()
+	initialize: function()
 	{
 	var
-		html = this.el.innerHTML,
-		ref = this.ref
+		html = this.el.innerHTML
 	;
-
 		if (!this.itemTemplate && html)
 		{
 			this.$el.empty();
@@ -145,8 +141,12 @@ cxl.ui.List = cxl.View.extend({
 
 		this.items = {};
 
-		cxl.View.prototype.load.apply(this, arguments);
+		if (this.ref)
+			this.set(this.ref);
+	},
 
+	set: function(ref)
+	{
 		ref.on('child_added', this.onAdd, this);
 		ref.on('child_removed', this.onRemove, this);
 		ref.on('child_moved', this.onMove, this);
@@ -221,28 +221,15 @@ cxl.ui.Form = cxl.View.extend({
 
 });
 
-cxl.ui.Content = cxl.View.extend({
-	render: function() {
 
-	}
-});
-
-cxl.directive('submit', function(el, param, scope) {
-	// TODO event directives should return a destroy method.
-	el.addEventListener('submit', function(ev) {
-		scope[param](ev.target);
-		ev.preventDefault();
-	});
-});
-
-cxl.directive('switch', {
-	render: function(val)
+cxl.directive('ui.switch', {
+	update: function(val)
 	{
 		this.$el.parent().toggleClass('active', val===true);
 	}
 });
 
 
-cxl.directive('list', cxl.ui.List);
+cxl.directive('ui.list', cxl.ui.List);
 
 })(this.cxl, this._, this.jQuery, this.Firebase);
