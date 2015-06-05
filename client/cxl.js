@@ -4,6 +4,10 @@
 (function(window, $, _, Backbone) {
 "use strict";
 
+
+// Link used by cxl.go to convert relative to absolute path
+var goLink = window.document.createElement('a');
+
 /**
  * Global router. By default it will only support
  * one level/state.
@@ -315,6 +319,13 @@ var cxl = window.cxl = new Module({
 
 	go: function(path)
 	{
+		if (path.indexOf('/')!==0)
+		{
+			goLink.setAttribute('href',
+				window.location.hash.substr(1) + '/' + path);
+			path = goLink.pathname;
+		}
+
 		window.location.hash = path;
 		return this;
 	},

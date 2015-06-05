@@ -274,7 +274,8 @@ cxl.directive('attribute', {
  * Runs Local Directive
  */
 cxl.directive('local', function(el, param, scope) {
-	return scope[param](el, param, scope);
+	var fn = _.get(scope, param);
+	return fn.call(scope, el, param, scope);
 });
 
 function resultDirective(fn)
@@ -326,6 +327,21 @@ cxl.directive('ready', function(el, param, scope)
 {
 	return viewEventDirective(el, 'ready', scope);
 });
+
+//
+// Navigation
+//
+cxl.directive('go', {
+	set: function()
+	{
+		var fn = _.get(this.parent, this.parameters);
+		cxl.go(fn.call(this.parent));
+	}
+});
+
+cxl.directive('goPath', { set: function() { cxl.go(this.parameters); } });
+
+cxl.directive('goUp', { set: function() { cxl.go('..'); } });
 
 //
 // DOM Content Directives

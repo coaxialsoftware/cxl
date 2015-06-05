@@ -236,9 +236,8 @@ cxl.directive('ui.input', {
 cxl.directive('ui.switch', {
 	load: function(el)
 	{
-		var me = this;
 		this.listenTo(el, 'click', function(ev) {
-			me.set(el.prop('checked'));
+			this.set(el.prop('checked'));
 			ev.stopPropagation();
 		});
 	},
