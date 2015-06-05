@@ -164,6 +164,7 @@ cxl.ui.List = cxl.View.extend({
 	onAdd: function(snap)
 	{
 		var item = new this.itemView({
+			parent: this,
 			template: this.itemTemplate,
 			ref: snap.ref()
 		});
@@ -221,11 +222,29 @@ cxl.ui.Form = cxl.View.extend({
 
 });
 
+cxl.directive('ui.input', {
+	load: function(el) {
+		this.listenTo(el, 'change', function() {
+			this.set(el.val());
+		});
+	},
+	update: function(val, el) {
+		el.val(val);
+	}
+});
 
 cxl.directive('ui.switch', {
-	update: function(val)
+	load: function(el)
 	{
-		this.$el.parent().toggleClass('active', val===true);
+		var me = this;
+		this.listenTo(el, 'click', function(ev) {
+			me.set(el.prop('checked'));
+			ev.stopPropagation();
+		});
+	},
+	update: function(val, el)
+	{
+		el.prop('checked', val);
 	}
 });
 

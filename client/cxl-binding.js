@@ -298,8 +298,9 @@ cxl.directive('result', function(el, param, scope)
 });
 
 cxl.directive('call', {
-	update: function(val, el, arg, parent) {
-		parent[arg].call(parent, val, el, arg);
+	set: function(val) {
+		var fn = _.get(this.parent, this.parameters);
+		fn.call(this.parent, val, this.$el, this.parameters);
 	}
 });
 
@@ -338,7 +339,7 @@ function jQueryDirective(el, arg, scope, method)
 		{
 			if (arg && scope)
 			{
-				var fn = scope[arg];
+				var fn = _.get(scope, arg);
 				val = typeof(fn)==='function' ? fn.call(scope, val) : fn;
 			}
 
@@ -346,6 +347,10 @@ function jQueryDirective(el, arg, scope, method)
 		}
 	});
 }
+
+cxl.directive('val', function(el, arg, scope) {
+	return jQueryDirective(el, arg, scope, 'val');
+});
 
 cxl.directive('text', function(el, arg, scope)
 {
@@ -394,7 +399,7 @@ cxl.directive('unless', function(el, param, scope) {
 //
 function domEventDirective(el, event, scope, param, prevent)
 {
-	var fn = param && cxl.prop(scope, param);
+	var fn = param && _.get(scope, param);
 
 	return new cxl.View({
 		el: el,
@@ -405,7 +410,7 @@ function domEventDirective(el, event, scope, param, prevent)
 					ev.preventDefault();
 
 				if (fn)
-					fn(ev);
+					fn.call(scope, ev);
 				else
 					this.set(ev);
 			});
@@ -426,6 +431,12 @@ cxl.directive('submit', function(el, e, scope) {
 	return domEventDirective(el, 'submit', scope, e, true);
 });
 
+cxl.directive('stop', function(el, event) {
+	el.addEventListener(event, function(ev) {
+		ev.stopPropagation();
+		ev.preventDefault();
+	});
+});
 
 //
 // Template Directives

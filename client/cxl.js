@@ -25,12 +25,12 @@ var Router = Backbone.Router.extend({
 
 	loadRoute: function(def, path)
 	{
-		def = typeof(def)==='function' ? def.call(this) : def;
+		def = typeof(def)==='function' ? { initialize: def } : def;
 		var view = cxl.Route.extend(def);
 
 		view.prototype.path = path;
 
-		cxl.router.route(path, view);
+		this.route(path, view);
 
 		return this;
 	},
@@ -46,6 +46,9 @@ var Router = Backbone.Router.extend({
 
 	start: function()
 	{
+		if (this.started)
+			return;
+
 		this.$content = this.$content || $('[cxl-content]');
 		_.each(this.routes, this.loadRoute, this);
 		this.refresh();
@@ -187,13 +190,6 @@ _.extend(View.prototype, Backbone.Events, {
 
 var Route = View.extend({
 
-	constructor: function(op)
-	{
-		if (typeof(op)==='function')
-			op = { initialize: op };
-		View.call(this, op);
-	},
-
 	load: function(el, args, scope)
 	{
 	var
@@ -275,8 +271,11 @@ var cxl = window.cxl = new Module({
 
 	start: function()
 	{
-		this.router.start();
-		this.$body.addClass('cxl-ready');
+		if (!this.router.started)
+		{
+			this.router.start();
+			this.$body.addClass('cxl-ready');
+		}
 	},
 
 	route: function(path, def)
@@ -318,40 +317,6 @@ var cxl = window.cxl = new Module({
 	{
 		window.location.hash = path;
 		return this;
-	},
-
-	/**
-	 * TODO ?
-	 * looks for property prop in the current scope
-	 * and its parents until found and returns it.
-	 */
-	result: function(scope, prop)
-	{
-		var result;
-
-		do {
-			result = _.result(scope, prop);
-		} while (result===undefined && (scope = scope.parent));
-
-		return result;
-	},
-
-	/**
-	 * looks for property prop in the current scope
-	 * and its parents until found and returns it. If it is a function
-	 * it will return a binded function.
-	 */
-	prop: function(scope, prop)
-	{
-		var result=scope[prop];
-
-		while (result===undefined && (scope = scope.parent))
-			result = scope[prop];
-
-		if (typeof(result)==='function')
-			result = result.bind(scope);
-
-		return result;
 	},
 
 	resolve: function(a)
