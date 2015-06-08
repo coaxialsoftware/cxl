@@ -4,17 +4,7 @@
 	"version": "1.0.0",
 	"main": "server/cxl-server.js",
 	
-	"dependencies": {
-		"express": "*",
-		"express-session": "*",
-		"colors": "*",
-		"pg":"*",
-		"lodash": "*",
-		"path-to-regexp": "*",
-		"bluebird": "*",
-		"bookshelf": "*",
-		"knex": "*"
-	},
+	"dependencies": { },
 	
 	"devDependencies": {
 		"grunt": "*",
@@ -30,6 +20,8 @@
 		"grunt-karma": "*",
 		"karma-qunit": "*",
 		"karma-coverage": "*",
-		"karma-phantomjs-launcher": "*"
+		"karma-phantomjs-launcher": "*",
+		
+		"docma": "j5g3/docma"
 	}
 }

@@ -5,7 +5,7 @@
 "use strict";
 
 
-// Link used by cxl.go to convert relative to absolute path
+// Link used by cxl.go to convert relative to absolute paths
 var goLink = window.document.createElement('a');
 
 /**
@@ -317,7 +317,7 @@ var cxl = window.cxl = new Module({
 		return this;
 	},
 
-	go: function(path)
+	path: function(path)
 	{
 		if (path.indexOf('/')!==0)
 		{
@@ -326,7 +326,15 @@ var cxl = window.cxl = new Module({
 			path = goLink.pathname;
 		}
 
-		window.location.hash = path;
+		return path;
+	},
+
+	/**
+	 * Navigates to path.
+	 */
+	go: function(path)
+	{
+		window.location.hash = this.path(path);
 		return this;
 	},
 

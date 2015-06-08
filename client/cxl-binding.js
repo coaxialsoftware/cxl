@@ -343,6 +343,10 @@ cxl.directive('goPath', { set: function() { cxl.go(this.parameters); } });
 
 cxl.directive('goUp', { set: function() { cxl.go('..'); } });
 
+cxl.directive('link', function(el, param) {
+	el.setAttribute('href', '#' + cxl.path(param));
+});
+
 //
 // DOM Content Directives
 //
