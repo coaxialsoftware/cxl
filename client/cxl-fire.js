@@ -1,5 +1,5 @@
 
-(function(cxl, _, Firebase) {
+(function(cxl) {
 
 
 function findRef(scope)
@@ -11,8 +11,6 @@ function findRef(scope)
 
 	return result;
 }
-
-cxl.Model = Firebase;
 
 cxl.templateCompiler.registerShortcut('&', 'refval');
 cxl.directive('refval', function(el, param, scope) {
@@ -40,7 +38,7 @@ cxl.directive('refkey', {
 	}
 });
 
-})(this.cxl, this._, this.Firebase);
+})(this.cxl);
 
 
 

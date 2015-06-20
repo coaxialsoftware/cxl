@@ -1,5 +1,6 @@
 
 var
+	express = require('express'),
 	cxl = require('./cxl-server')
 ;
 

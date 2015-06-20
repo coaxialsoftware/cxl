@@ -194,33 +194,6 @@ cxl.ui.List = cxl.View.extend({
 
 });
 
-cxl.ui.Form = cxl.View.extend({
-
-	events: {
-		'submit': 'onSubmit'
-	},
-
-	fields: null,
-
-	bindElement: function(bind)
-	{
-		this.fields.push(new cxl.Field({
-			el: bind.el
-		}));
-	},
-
-	render: function()
-	{
-		this.fields = [];
-		_.each(this.ref, this.bindElement, this);
-	},
-
-	onSubmit: function(ev)
-	{
-		ev.preventDefault();
-	}
-
-});
 
 cxl.directive('ui.input', {
 	load: function(el) {

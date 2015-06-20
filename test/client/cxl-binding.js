@@ -18,7 +18,7 @@ var
 	a.ok(b);
 	a.equal(el.value, null);
 
-	ref.on('value', function() {
+	el.on('value', function() {
 		a.equal(el.value, 'cxl');
 		b.unbind();
 		done();

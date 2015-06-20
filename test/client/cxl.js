@@ -179,11 +179,6 @@ var
 		initialize: function(el)
 		{
 			a.ok(el);
-		},
-
-		render: function(el)
-		{
-			a.ok(el);
 			done();
 		}
 	});

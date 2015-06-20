@@ -1,4 +1,5 @@
 
+"use strict";
 
 var
 	_ = require('lodash'),
@@ -18,6 +19,14 @@ function cxl(module)
 
 _.extend(cxl, {
 
+	/**
+	 * Enable debug module
+	 */
+	enableDebug: function()
+	{
+		require('./cxl-server-debug');
+	},
+
 	static: function(a, b)
 	{
 		if (typeof(a)==='string')
@@ -26,17 +35,17 @@ _.extend(cxl, {
 		return express.static.call(this, a, b);
 	},
 
-	log: function(msg)
-	{
-		console.log(colors.cyan('cxl ') + msg);
-	},
+	extend: _.extend.bind(_),
 
-	error: function(msg)
+	log: function(msg, module, method)
 	{
-		if (msg instanceof Error)
-			console.error(msg.stack);
-		else
-			console.error(colors.red(msg));
+	var
+		single = typeof(msg)==='string' ?
+			(module || colors.cyan('cxl')) + ' ' + msg : msg
+	;
+		console[method || 'log'](single);
+
+		return cxl;
 	},
 
 	/**
@@ -46,7 +55,7 @@ _.extend(cxl, {
 	 * @param {object} prop Properties
 	 * @param {object} static_prop Static Properties
 	 */
-	define(A, prop, static_prop)
+	define: function(A, prop, static_prop)
 	{
 		_.extend(A.prototype, prop);
 
@@ -113,123 +122,22 @@ cxl.Service = cxl.define(class Service {
 
 	constructor(module, options)
 	{
-		var defaults = cxl.Service.defaults;
-
 		this.module = module;
 
-		_.extend(this, defaults, options);
+		_.extend(this, options);
 
-		this.route = new cxl.Route(options.route ||
-			('/' + this.name + '/:id?'));
+		this.route = new cxl.Route(options.route);
 
-		this.initialize();
-	}
-
-	parse(result)
-	{
-		return result.toJSON();
-	}
-
-	__parse(result)
-	{
-		return ((typeof(this.parse)==='string') ?
-			result.get(this.parse) :
-			this.parse(result)) || {};
-	}
-
-	__query(req)
-	{
-	var
-		model = new this.model(),
-		id = req.params[model.idAttribute],
-		cb = this[req.method].bind(this, req, model),
-		promise
-	;
-		if (id)
-			model.set(model.idAttribute, id|0);
-
-		if (this.query)
-			promise = this.query(req, model);
-
-		return promise ? promise.then(cb) : cb();
-	}
-
-	GET(req, model)
-	{
-		return model[model.id ? 'fetch' : 'fetchAll']({ columns: []});
-	}
-
-	POST(req, model)
-	{
-		return model.save(req.body);
-	}
-
-	PUT(req, model)
-	{
-		model.set(model.idProperty, req.params[model.idProperty]);
-		return this.POST(req, model);
-	}
-
-	DELETE(req, model)
-	{
-		model.set(model.idProperty, req.params[model.idProperty]);
-		return model.destroy();
-	}
-
-	PATCH(req, model)
-	{
-		return this.PUT(req, model);
-	}
-
-	error(res, err)
-	{
-		this.module.error(err);
-
-		res.status(500).end();
-	}
-
-	handle(req, res)
-	{
-		this.__query(req).then(this.__parse.bind(this))
-			.then(res.send.bind(res), this.error.bind(this, res))
-		;
+		if (this.initialize)
+			this.initialize();
 	}
 
 	middleware(req, res, next)
 	{
-		if (this.methods.indexOf(req.method)!==-1 &&
-			this[req.method] && this.route.match(req.path))
-		{
-			req.params = this.route.params;
-			return this.handle(req, res);
-		}
+		if (this[req.method])
+			return this[req.method](req, res);
 
 		next();
-	}
-
-	initialize()
-	{
-	}
-
-}, {
-
-	module: null,
-
-	/**
-	 *
-	 */
-	query: null,
-
-	/**
-	 * HTTP Methods
-	 * @default cxl.Service.defaults.methods
-	 */
-	methods: null
-
-}, {
-
-	defaults: {
-		methods: [ 'GET', 'POST', 'PUT', 'DELETE', 'PATCH' ]
 	}
 
 });
@@ -248,12 +156,10 @@ cxl.Module = cxl.define(class Module {
 		this.__config = [];
 	}
 
-	/**
-	 * Laxily create a new express server.
-	 */
-	get server()
+	createServer()
 	{
-		return this.__server || (this.__server = express());
+		this.server = express();
+		return this;
 	}
 
 	/**
@@ -339,9 +245,15 @@ cxl.Module = cxl.define(class Module {
 
 	/**
 	 * Add new route. Order matters.
+	 *
+	 * @param {string|function} fn Function to execute or method name. It will
+	 *                             be executed in the module's context.
 	 */
 	route(method, path, fn)
 	{
+		if (typeof(fn)==='string')
+			fn = this[fn];
+
 		this.__routes.push({
 			id: `route ${method} ${path}`,
 			fn: method.toLowerCase(),
@@ -357,14 +269,9 @@ cxl.Module = cxl.define(class Module {
 	start()
 	{
 		_.invoke(this.__config, 'call', this);
-
-		if (this.db)
-			this._loadDatabase();
-
-		_.each(this.__models, this._loadModel, this);
 		_.each(this.__routes, this._loadRoute, this);
 
-		if (this.__server)
+		if (this.server && !this.server.started)
 			this.startServer();
 
 		_.invoke(this.__run, 'call', this);
@@ -374,7 +281,10 @@ cxl.Module = cxl.define(class Module {
 	{
 		var a = this.__listener.address();
 
-		this.log('Listening in ' + a.address + ':' + a.port);
+		if (!this.port)
+			this.port = a.port;
+
+		this.log('Listening to ' + a.address + ':' + a.port);
 	}
 
 	onServerError(e)
@@ -384,51 +294,37 @@ cxl.Module = cxl.define(class Module {
 				this.host + ':' + this.port +
 				'. Make sure the host and port are not already in use.'
 			);
-		else
-			this.error(e);
+		this.error(e);
 	}
 
 	startServer()
 	{
-		var l = this.server.listen(this.port, this.host,
+		var l = this.__listener = this.server.listen(this.port, this.host,
 			this.onServerStart.bind(this));
 
-		this.__listener = l;
+		this.server.started = true;
 
 		l.on('error', this.onServerError.bind(this));
 	}
 
 	log(msg)
 	{
-		console.log((this.logColor ?
-			colors[this.logColor](this.name) : this.name) +
-			' ' + msg
-		);
+		cxl.log(msg, this.logColor ?
+			colors[this.logColor](this.name) : this.name);
+		return this;
 	}
 
 	error(msg)
 	{
-		this.log(colors.red(msg));
-		cxl.error(msg);
+		cxl.log(colors.red('ERROR ' + msg), colors.red(this.name), 'error');
+
+		if (msg instanceof Error)
+			console.error(msg.stack);
 	}
 
 	extend(prop)
 	{
-		return _.extend(this, prop);
-	}
-
-	_loadDatabase()
-	{
-		var knex = require('knex')(typeof(this.db)==='string' ? {
-			client: 'pg',
-			connection: this.db,
-			pool: {
-				min: 0,
-				max: 10
-			}
-		} : this.db);
-
-		this.bookshelf = require('bookshelf')(knex);
+		return cxl.extend(this, prop);
 	}
 
 	// TODO add validation
@@ -439,14 +335,6 @@ cxl.Module = cxl.define(class Module {
 		this.server[def.fn].apply(this.server, args);
 	}
 
-	_loadModel(def, name)
-	{
-		if (this.bookshelf)
-			this.__models[name] = this.bookshelf.Model.extend(def.call(this, this));
-		else
-			this.log('Model ' + name + ' not initialized because DB connection not available.');
-	}
-
 }, {
 
 	/**
@@ -455,15 +343,15 @@ cxl.Module = cxl.define(class Module {
 	 */
 	db: null,
 	name: null,
-	logColor: 'blue',
+	logColor: 'green',
 
 	port: 80,
-	host: 'localhost',
+	host: '',
 
 	/**
 	 * @type {express.Application}
 	 */
-	__server: null,
+	server: null,
 
 	/**
 	 * Node Server

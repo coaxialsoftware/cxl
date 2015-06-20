@@ -77,6 +77,13 @@ var Router = Backbone.Router.extend({
 
 });
 
+function Emitter(options)
+{
+	_.extend(this, options);
+}
+
+_.extend(Emitter.prototype, Backbone.Events);
+
 function View(options)
 {
     _.extend(this, options);
@@ -95,9 +102,6 @@ _.extend(View.prototype, Backbone.Events, {
 
 	/// {function(el)}
 	initialize: null,
-
-	/// {function(el)
-	render: null,
 
 	/// {funcion(val)}
 	update: null,
@@ -124,9 +128,6 @@ _.extend(View.prototype, Backbone.Events, {
 
 		if (view.template)
 			view.loadTemplate(view.template);
-
-		if (view.render)
-			view.render(el, args, parent);
 	},
 
 	val: function()
@@ -188,6 +189,12 @@ _.extend(View.prototype, Backbone.Events, {
 			this.setElement(tpl.el);
 		else
 			this.$el.html(tpl.el);
+	},
+
+	remove: function()
+	{
+		this.unbind();
+		this.$el.remove();
 	}
 
 });
@@ -256,6 +263,7 @@ var cxl = window.cxl = new Module({
 
 	Route: Route,
 	View: View,
+	Emitter: Emitter,
 
 	initialize: function()
 	{
@@ -264,6 +272,8 @@ var cxl = window.cxl = new Module({
 
 		this.ready(this.onReady.bind(this));
 	},
+
+	extend: _.extend.bind(_),
 
 	onReady: function()
 	{
@@ -376,5 +386,7 @@ var cxl = window.cxl = new Module({
 
 });
 
+cxl.Model = Backbone.Model;
+cxl.Events = Backbone.Events;
 
 })(this, this.jQuery, this._, this.Backbone);
