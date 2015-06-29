@@ -43,6 +43,10 @@ override(cxl.Module.prototype, '_loadRoute', function(def) {
 	this.log(`Loading ${def.id}`);
 });
 
+cxl.Module.prototype.dbg = function() {
+	this.log.apply(this, arguments);
+};
+
 override(cxl.Module.prototype, 'start', function() {
 	this.log('Starting...');
 }, function() {

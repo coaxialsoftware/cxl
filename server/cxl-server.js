@@ -47,7 +47,7 @@ _.extend(cxl, {
 
 		return cxl;
 	},
-
+	
 	/**
 	 * Defines a class
 	 *
@@ -320,6 +320,13 @@ cxl.Module = cxl.define(class Module {
 
 		if (msg instanceof Error)
 			console.error(msg.stack);
+	}
+
+	/**
+	 * Like cxl.log but only in debug mode.
+	 */
+	dbg(msg)
+	{
 	}
 
 	extend(prop)
