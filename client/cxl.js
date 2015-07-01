@@ -327,14 +327,13 @@ var cxl = window.cxl = new Module({
 		return this;
 	},
 
+	/**
+	 * Normalizes path.
+	 */
 	path: function(path)
 	{
-		if (path.indexOf('/')!==0)
-		{
-			goLink.setAttribute('href',
-				window.location.hash.substr(1) + '/' + path);
-			path = goLink.pathname;
-		}
+		goLink.setAttribute('href', path);
+		path = goLink.pathname;
 
 		return path;
 	},
@@ -344,7 +343,9 @@ var cxl = window.cxl = new Module({
 	 */
 	go: function(path)
 	{
-		window.location.hash = this.path(path);
+		window.location.hash = this.path((path.charAt(0)!=='/' ?
+			window.location.hash.substr(1) + '/' : '') + path);
+		
 		return this;
 	},
 
