@@ -1,5 +1,6 @@
 
 var
+	colors = require('colors/safe'),
 	cxl = require('./cxl-server')
 ;
 
@@ -28,6 +29,23 @@ function override(obj, fn, pre, post)
 	};
 }
 
+function hrtime()
+{
+	var time = process.hrtime();
+	return time[0] + (time[1]/1e9);
+}
+
+function endtime(time)
+{
+var
+	s = hrtime()-time,
+	str = s.toFixed(4) + 's'
+;
+	
+	// Color code based on time, 
+	return s > 0.1 ? (s > 0.5 ? colors.red(str) : colors.yellow(str)) : str;
+}
+
 //
 // cxl
 //
@@ -47,9 +65,9 @@ cxl.Module.prototype.dbg = function() {
 };
 
 override(cxl.Module.prototype, 'start', function() {
-	this.log('Starting...');
+	this.__start = hrtime();
 }, function() {
-	this.log('Module successfully started.');
+	this.log(`Module successfully started (${endtime(this.__start)}).`);
 });
 
 override(cxl.Module.prototype, '_loadModel', function(def, name) {

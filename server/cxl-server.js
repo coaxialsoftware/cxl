@@ -325,7 +325,7 @@ cxl.Module = cxl.define(class Module {
 	/**
 	 * Like cxl.log but only in debug mode.
 	 */
-	dbg(msg)
+	dbg()
 	{
 	}
 

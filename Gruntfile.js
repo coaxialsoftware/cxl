@@ -118,14 +118,14 @@ module.exports = function(grunt) {
 			}
 		},
 
-		nodeunit: {
+		/*nodeunit: {
 
 			all: [ 'test/*.js' ],
 			options: {
 				reporter: 'verbose'
 			}
 
-		},
+		},*/
 
 		karma: {
 
