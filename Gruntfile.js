@@ -2,7 +2,7 @@ module.exports = function(grunt) {
 
 	grunt.initConfig({
 
-		client: grunt.file.readJSON('bower.json'),
+		client: { name: 'cxl' },
 		server: grunt.file.readJSON('package.json'),
 
 		src: {
@@ -41,9 +41,15 @@ module.exports = function(grunt) {
 
 			client: {
 				files: {
-					'dist/<%=client.name%>.js': '<%=src.client%>',
+					'dist/<%=client.name%>.js': [
+						// Custom build of jquery
+						'lib/jquery.js',
+						'node_modules/lodash/index.js',
+						'node_modules/backbone/backbone.js',
+						'<%=src.client%>'
+					],
 					'dist/<%=client.name%>.dbg.js': [
-						'<%= src.client %>', 'client/cxl-debug.js'
+						'dist/<%=client.name%>.js', 'client/cxl-debug.js'
 					]
 				}
 			},
@@ -82,7 +88,7 @@ module.exports = function(grunt) {
 
 			client: {
 				options: {
-					paths: [ 'bower_components', 'less' ],
+					paths: [ 'node_modules', 'less' ],
 					sourceMap: true,
 					strictImports: true,
 					sourceMapURL: '<%= client.name %>.css.map',
@@ -147,11 +153,7 @@ module.exports = function(grunt) {
 				files: [
 					{ src: [
 						'client/cxl-polyfill.js',
-						'bower_components/jquery/dist/jquery.js',
-						'bower_components/bootstrap/dist/js/bootstrap.js',
-						'bower_components/lodash/lodash.js',
-						'bower_components/backbone/backbone.js',
-						'bower_components/firebase/firebase.js',
+						'node_modules/firebase/firebase.js',
 						'<%= src.client %>'
 					]},
 					{ src: 'test/client/*.js' }
@@ -170,7 +172,7 @@ module.exports = function(grunt) {
 						expand:true,
 						src: '*',
 						dest: 'dist',
-						cwd: 'bower_components/bootstrap/fonts'
+						cwd: 'node_modules/bootstrap/fonts'
 					}
 				]
 			}

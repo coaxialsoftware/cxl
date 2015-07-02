@@ -21,6 +21,10 @@
 		"karma-qunit": "*",
 		"karma-coverage": "*",
 		"karma-phantomjs-launcher": "*",
+		"lodash": "*",
+		"backbone": "*",
+		"bootstrap": "*",
+		"firebase": "*",
 		
 		"docma": "j5g3/docma"
 	}
