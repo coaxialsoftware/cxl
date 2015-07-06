@@ -4,7 +4,12 @@
 	"version": "1.0.0",
 	"main": "server/cxl-server.js",
 	
-	"dependencies": { },
+	"dependencies": {
+		"express": "4",
+		"colors": "*",
+		"path-to-regexp": "*",
+		"lodash": "*"
+	},
 	
 	"devDependencies": {
 		"grunt": "*",
@@ -21,7 +26,6 @@
 		"karma-qunit": "*",
 		"karma-coverage": "*",
 		"karma-phantomjs-launcher": "*",
-		"lodash": "*",
 		"backbone": "*",
 		"bootstrap": "*",
 		"firebase": "*",

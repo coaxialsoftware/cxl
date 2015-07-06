@@ -264,6 +264,14 @@ var cxl = window.cxl = new Module({
 	Route: Route,
 	View: View,
 	Emitter: Emitter,
+	
+	/**
+	 * getElementById wrapper
+	 */
+	id: function(id)
+	{
+		return document.getElementById(id);
+	},
 
 	initialize: function()
 	{
