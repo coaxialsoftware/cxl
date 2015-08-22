@@ -34,6 +34,26 @@ _.extend(cxl, {
 
 		return express.static.call(this, a, b);
 	},
+	
+	hrtime: function()
+	{
+		var time = process.hrtime();
+		return time[0] + (time[1]/1e9);
+	},
+	
+	formatTime(time, time2)
+	{
+		if (time2===undefined)
+			time2 = cxl.hrtime();
+		
+	var
+		s = time2-time,
+		str = s.toFixed(4) + 's'
+	;
+
+		// Color code based on time, 
+		return s > 0.1 ? (s > 0.5 ? colors.red(str) : colors.yellow(str)) : str;
+	},
 
 	extend: _.extend.bind(_),
 
@@ -154,6 +174,13 @@ cxl.Module = cxl.define(class Module {
 
 		this.__run = [];
 		this.__config = [];
+	}
+
+	operation(msg, fn)
+	{
+		var t = cxl.hrtime();
+		fn();
+		this.log(msg + ` (${cxl.formatTime(t)})`);
 	}
 
 	createServer()
