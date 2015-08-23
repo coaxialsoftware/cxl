@@ -179,7 +179,7 @@ cxl.Module = cxl.define(class Module {
 	operation(msg, fn)
 	{
 		var t = cxl.hrtime();
-		fn();
+		fn.call(this);
 		this.log(msg + ` (${cxl.formatTime(t)})`);
 	}
 
