@@ -1,6 +1,5 @@
 
 var
-	colors = require('colors/safe'),
 	cxl = require('./cxl-server')
 ;
 

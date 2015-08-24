@@ -98,7 +98,7 @@ _.extend(View, {
 	extend: Backbone.View.extend
 });
 
-_.extend(View.prototype, Backbone.Events, {
+_.extend(View.prototype, {
 
 	/// {function(el)}
 	initialize: null,
@@ -177,7 +177,6 @@ _.extend(View.prototype, Backbone.Events, {
 		if (this.template)
 			this.template.destroy();
 
-		this.off();
 		this.stopListening();
 	},
 
