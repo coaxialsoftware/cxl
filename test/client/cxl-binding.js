@@ -11,18 +11,19 @@ QUnit.module('cxl-binding');
 QUnit.test('cxl.Binding#constructor', function(a) {
 var
 	done = a.async(),
-	el = new cxl.View(),
+	el = new cxl.Emitter(),
 	ref = fb.child('cxl-binding/text'),
-	b = cxl.binding({ refA: el, refB: ref })
-;
-	a.ok(b);
-	a.equal(el.value, null);
-
-	el.on('value', function() {
+	b = cxl.binding({ refA: el, refB: ref }),
+	fn = function() {
 		a.equal(el.value, 'cxl');
 		b.unbind();
 		done();
-	});
+	}
+;
+	if (el.value)
+		fn();
+	else
+		el.on('value', fn);
 });
 
 
@@ -40,7 +41,7 @@ var
 QUnit.test('cxl.Binding write', function(a) {
 var
 	done = a.async(),
-	b = cxl.binding({ refA: cxl.view(), refB: fb.child('cxl-binding/var') })
+	b = cxl.binding({ refA: new cxl.Emitter(), refB: fb.child('cxl-binding/var') })
 ;
 	b.refA.set = function(val) {
 		a.equal(val, a.test.testId);
@@ -54,7 +55,7 @@ var
 QUnit.test('cxl.Binding write error', function(a) {
 var
 	done = a.async(),
-	b = cxl.binding({ refA: cxl.view(), refB: fb.child('cxl-binding/bool') })
+	b = cxl.binding({ refA: new cxl.Emitter(), refB: fb.child('cxl-binding/bool') })
 ;
 	b.refA.on('error', function(err) {
 		a.equal(err.code, 'PERMISSION_DENIED');
@@ -68,7 +69,7 @@ var
 QUnit.test('cxl.Binding#bind - addChild', function(a) {
 var
 	done = a.async(),
-	el = new cxl.View({
+	el = new cxl.Emitter({
 		set: _.debounce(function(snap)
 		{
 			a.ok(snap);
@@ -85,7 +86,7 @@ var
 QUnit.test('cxl.Binding server validation error', function(a) {
 var
 	done = a.async(),
-	b = cxl.binding({ refA: cxl.view(),
+	b = cxl.binding({ refA: new cxl.Emitter(),
 		refB: fb.child('cxl-binding/validate') })
 ;
 	b.refA.on('error', function(err) {
@@ -101,7 +102,7 @@ var
 
 QUnit.module('cxl.TemplateCompiler');
 
-QUnit.test('cxl.TemplateCompiler - view directive', function(a) {
+/*QUnit.test('cxl.TemplateCompiler - view directive', function(a) {
 	var tpl;
 	var div = $('<div><div &="' + a.test.testId + '"></div></div>');
 
@@ -114,7 +115,7 @@ QUnit.test('cxl.TemplateCompiler - view directive', function(a) {
 	tpl.destroy();
 });
 
-/*QUnit.test('cxl.TemplateCompiler - list view directive', function(a) {
+QUnit.test('cxl.TemplateCompiler - list view directive', function(a) {
 	var tpl, fn = function() {};
 	var div = $('<div><div &="' + a.test.testId + '"></div></div>');
 	var done = a.async();

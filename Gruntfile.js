@@ -153,7 +153,10 @@ module.exports = function(grunt) {
 				files: [
 					{ src: [
 						'client/cxl-polyfill.js',
-						'node_modules/firebase/firebase.js',
+						'lib/jquery.js',
+						'node_modules/lodash/index.js',
+						'node_modules/backbone/backbone.js',
+						'node_modules/firebase/lib/firebase-web.js',
 						'<%= src.client %>'
 					]},
 					{ src: 'test/client/*.js' }

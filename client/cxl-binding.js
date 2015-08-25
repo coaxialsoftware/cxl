@@ -248,11 +248,11 @@ cxl.template = function(id)
 // CSS Directives
 //
 cxl.directive('class', {
-	update: function(val, el, cls) { el.toggleClass(cls, val); }
+	update: function(val) { this.el.classList.toggle(this.parameters, val); }
 });
 
 cxl.directive('toggleClass', {
-	set: function(val, el, cls) { el.toggleClass(cls); }
+	set: function() { this.el.classList.toggle(this.parameters); }
 });
 
 //
@@ -280,10 +280,10 @@ cxl.directive('local', function(el, param, scope) {
 
 function resultDirective(fn)
 {
-	return new cxl.View({
+	return new cxl.Emitter({
 		on: function()
 		{
-			cxl.View.prototype.on.apply(this, arguments);
+			cxl.Emitter.prototype.on.apply(this, arguments);
 			this.set(fn());
 		}
 	});
@@ -353,9 +353,9 @@ cxl.directive('link', function(el, param) {
 
 function jQueryDirective(el, arg, scope, method)
 {
-	return new cxl.View({
-		el: el,
-		update: function(val, el)
+	el = $(el);
+	return new cxl.Emitter({
+		update: function(val)
 		{
 			if (arg && scope)
 			{
@@ -390,17 +390,16 @@ function markerDirective(el, param, scope, def)
 	var marker = $(document.createComment('bind'));
 	el.parentNode.insertBefore(marker[0], el);
 
-	def.el = el; def.parameters = param; def.parent = scope;
 	def.marker = marker;
 
-	return new cxl.View(def);
+	return new cxl.Emmiter(def);
 }
 
 cxl.directive('if', function(el, param, scope)
 {
+	el.detach();
 	return markerDirective(el, param, scope, {
-		load: function(el) { el.detach(); },
-		update: function(val, el) {
+		update: function(val) {
 			return val ? this.marker.after(el) : el.detach();
 		}
 	});
@@ -408,7 +407,7 @@ cxl.directive('if', function(el, param, scope)
 
 cxl.directive('unless', function(el, param, scope) {
 	return markerDirective(el, param, scope, {
-		update: function(val, el) {
+		update: function(val) {
 			return val ? el.detach() : this.marker.after(el);
 		}
 	});

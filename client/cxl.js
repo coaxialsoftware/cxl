@@ -81,8 +81,44 @@ function Emitter(options)
 {
 	_.extend(this, options);
 }
+	
+Emitter.extend = Backbone.View.extend;
 
-_.extend(Emitter.prototype, Backbone.Events);
+_.extend(Emitter.prototype, Backbone.Events, {
+	
+	value: null,
+	update: null,
+	error: null,
+	
+	val: function()
+	{
+		return this.value;
+	},
+
+	set: function(value, onComplete)
+	{
+		if (this.value !== value)
+		{
+			this.value = value;
+			
+			if (this.update)
+				this.update(value);
+
+			if (onComplete)
+				onComplete(this.error);
+
+			this.trigger('value', this);
+		}
+
+		return this;
+	},
+	
+	unbind: function()
+	{
+		this.off();
+	}
+
+});
 
 function View(options)
 {
@@ -128,29 +164,6 @@ _.extend(View.prototype, {
 
 		if (view.template)
 			view.loadTemplate(view.template);
-	},
-
-	val: function()
-	{
-		return this.value;
-	},
-
-	set: function(value, onComplete)
-	{
-		if (this.value !== value)
-		{
-			this.value = value;
-
-			if (this.update)
-				this.update(value, this.$el, this.parameters, this.parent);
-
-			if (onComplete)
-				onComplete(this.error);
-
-			this.trigger('value', this);
-		}
-
-		return this;
 	},
 
 	stopListening: function()
@@ -313,23 +326,15 @@ var cxl = window.cxl = new Module({
 	{
 		if (Fn===undefined)
 			return cxl.templateCompiler.directives[name];
-
-		var d = Fn;
-
+		
 		if (_.isPlainObject(Fn))
-			Fn = cxl.View.extend(Fn);
-
-		if (Fn.prototype instanceof cxl.View)
-			d = function(el, param, scope)
+			Fn = cxl.Emitter.extend(Fn);
+		
+		cxl.templateCompiler.directives[name] = Fn.extend ? 
+			function(el, param, scope)
 			{
-				return new Fn({
-					el: el,
-					parameters: param,
-					parent: scope
-				});
-			};
-
-		cxl.templateCompiler.directives[name] = d;
+				return new Fn({ el: el, parameters: param, parent: scope });
+			} : Fn;
 
 		return this;
 	},
