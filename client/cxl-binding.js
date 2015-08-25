@@ -447,14 +447,22 @@ cxl.directive('click', function(el, e, scope) {
 	return domEventDirective(el, 'click', scope, e, true);
 });
 
+/**
+ * Must be attached to form.
+ */
 cxl.directive('submit', function(el, e, scope) {
 	return domEventDirective(el, 'submit', scope, e, true);
+});
+	
+cxl.directive('prevent', function(el, event) {
+	el.addEventListener(event, function(ev) {
+		ev.preventDefault();
+	});
 });
 
 cxl.directive('stop', function(el, event) {
 	el.addEventListener(event, function(ev) {
 		ev.stopPropagation();
-		ev.preventDefault();
 	});
 });
 
