@@ -5,7 +5,7 @@
 	"main": "server/cxl-server.js",
 	
 	"dependencies": {
-		"express": "4",
+		"express": "*",
 		"colors": "*",
 		"path-to-regexp": "*",
 		"lodash": "*"
