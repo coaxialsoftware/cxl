@@ -176,11 +176,25 @@ cxl.Module = cxl.define(class Module {
 		this.__config = [];
 	}
 
+	/**
+	 * Helper function
+	 */
 	operation(msg, fn)
 	{
-		var t = cxl.hrtime();
-		fn.call(this);
-		this.log(msg + ` (${cxl.formatTime(t)})`);
+	var
+		me = this,
+		t = cxl.hrtime(),
+		result = fn.call(this),
+		cb = function() {
+			me.log(msg + ` (${cxl.formatTime(t)})`);
+		}
+	;
+		if (result && result.then)
+			result.then(cb);
+		else
+			cb();
+		
+		return this;
 	}
 
 	createServer()
