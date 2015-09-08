@@ -24,6 +24,7 @@ _.extend(cxl, {
 	 */
 	enableDebug: function()
 	{
+		cxl.debug = true;
 		require('./cxl-server-debug');
 	},
 
@@ -161,6 +162,72 @@ cxl.Service = cxl.define(class Service {
 	}
 
 });
+
+cxl.Logger = function(prefix)
+{
+	var obj = function(msg) {
+		console.log(`${obj.prefix} ${msg}`);
+	};
+	
+	obj.prefix = prefix;
+	obj.error = function(msg) {
+		console.error(colors.red(`${obj.prefix} ${msg}`));
+	};
+					  
+	obj.dbg = function(msg) {
+		if (cxl.debug)
+			obj(msg);
+	};
+	
+	obj.operation = function(msg, fn, scope)
+	{
+	var
+		t = cxl.hrtime(),
+		result = fn.call(scope),
+		done = function() { obj(`${msg} (${cxl.formatTime(t)})`); }
+	;
+		if (result && result.then)
+			result = result.then(function(res) {
+				done();
+				return res;
+			});
+		else
+			done();
+		
+		return result;
+	};
+	
+	return obj;
+};
+
+cxl.EventListener = {
+	
+	__listeners: null,
+	
+	stopListening: function(obj, ev, callback)
+	{
+		_.filter(this.__listeners, {
+			obj: obj, ev: ev, callback: callback
+		}).each(function(l) {
+			l.obj.off(l.ev, l.fn);
+		});
+		
+		return this;
+	},
+	
+	listenTo: function(obj, ev, callback)
+	{
+	var
+		l = this.__listeners || (this.__listeners=[]),
+		fn = callback.bind(this)
+	;
+		obj.on(ev, fn);
+		l.push({ obj: obj, ev: ev, callback: callback, fn: fn });
+		
+		return this;
+	}
+	
+};
 
 cxl.Module = cxl.define(class Module {
 
