@@ -208,7 +208,7 @@ cxl.EventListener = {
 	{
 		_.filter(this.__listeners, {
 			obj: obj, ev: ev, callback: callback
-		}).each(function(l) {
+		}).forEach(function(l) {
 			l.obj.off(l.ev, l.fn);
 		});
 		

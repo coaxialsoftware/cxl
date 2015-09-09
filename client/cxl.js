@@ -130,9 +130,7 @@ function View(options)
     this.load(this.$el, this.parameters, this.parent);
 }
 
-_.extend(View, {
-	extend: Backbone.View.extend
-});
+View.extend = Backbone.View.extend;
 
 _.extend(View.prototype, {
 
