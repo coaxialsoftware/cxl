@@ -138,7 +138,7 @@ _.extend(View.prototype, {
 	initialize: null,
 
 	/// {funcion(val)}
-	update: null,
+	setup: null,
 
 	/// Current View Value
 	value: null,
@@ -162,6 +162,9 @@ _.extend(View.prototype, {
 
 		if (view.template)
 			view.loadTemplate(view.template);
+		
+		if (view.setup)
+			view.setup();
 	},
 
 	stopListening: function()
