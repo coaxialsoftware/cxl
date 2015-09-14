@@ -95,6 +95,11 @@ _.extend(cxl.CompiledTemplate.prototype, {
 	{
 		_.invoke(this.bindings, 'unbind');
 		this.scope = this.el = this.bindings = null;
+	},
+	
+	valueOf: function()
+	{
+		return this.el;
 	}
 
 });
@@ -105,7 +110,6 @@ _.extend(cxl.CompiledTemplate.prototype, {
 cxl.TemplateCompiler = function()
 {
 	this.directives = {};
-	this.templates = {};
 
 	// TODO measure performance
 	this.createFragment = cxl.support.createContextualFragment ?
@@ -116,7 +120,6 @@ cxl.TemplateCompiler = function()
 _.extend(cxl.TemplateCompiler.prototype, {
 
 	directives: null,
-	templates: null,
 
 	shortcuts: {
 		'#': 'local',
@@ -130,11 +133,6 @@ _.extend(cxl.TemplateCompiler.prototype, {
 	registerShortcut: function(key, directive)
 	{
 		this.shortcuts[key] = directive;
-	},
-
-	registerTemplate: function(id, content)
-	{
-		return (this.templates[id] = content);
 	},
 
 	createFragment: null,
@@ -239,10 +237,11 @@ cxl.binding = function(op) { return new cxl.Binding(op); };
 cxl.templateCompiler = new cxl.TemplateCompiler();
 cxl.compile = function(el, scope) { return cxl.templateCompiler.compile(el, scope); };
 
-cxl.template = function(id)
+cxl.template = function(str)
 {
-	return cxl.templateCompiler.templates[id] ||
-		(cxl.templateCompiler.registerTemplate(id, document.getElementById(id).innerHTML));
+	return function(scope) {
+		return cxl.compile(str, scope);
+	};
 };
 
 //
@@ -424,9 +423,8 @@ function domEventDirective(el, event, scope, param, prevent)
 {
 	var fn = param && _.get(scope, param);
 
-	return new cxl.View({
-		el: el,
-		load: function(el)
+	return new cxl.Emitter({
+		initialize: function()
 		{
 			this.listenTo(el, event, function(ev) {
 				if (prevent)

@@ -76,15 +76,51 @@ var Router = Backbone.Router.extend({
 	}
 
 });
+	
+/**
+ * A Listener mixin, supports on/off and addEventListener methods
+ */
+var Listener = {
+	
+	stopListening: function()
+	{
+		_.invoke(this.__listeningTo, 'call');
+
+		return this;
+	},
+
+	listenTo: function(obj, name, callback)
+	{
+	var
+		listeningTo = this.__listeningTo || (this.__listeningTo = []),
+		fn = callback.bind(this),
+		on = obj.on || obj.addEventListener,
+		off = obj.off || obj.removeEventListener
+	;
+		if (!on)
+			throw "Object is not listeneable.";
+		
+		on.call(obj, name, fn);
+		listeningTo.push(off.bind(obj, name, fn));
+
+		return this;
+	}
+	
+};
+	
+var Events = _.extend(Backbone.Events, Listener);
 
 function Emitter(options)
 {
 	_.extend(this, options);
+	
+	if (this.initialize)
+		this.initialize();
 }
 	
 Emitter.extend = Backbone.View.extend;
 
-_.extend(Emitter.prototype, Backbone.Events, {
+_.extend(Emitter.prototype, Events, {
 	
 	value: null,
 	update: null,
@@ -132,7 +168,7 @@ function View(options)
 
 View.extend = Backbone.View.extend;
 
-_.extend(View.prototype, {
+_.extend(View.prototype, Listener, {
 
 	/// {function(el)}
 	initialize: null,
@@ -145,6 +181,9 @@ _.extend(View.prototype, {
 
 	/// Set if error
 	error: null,
+	
+	/// Template string or function that returns a string.
+	template: null,
 
 	setElement: function(el)
 	{
@@ -162,28 +201,6 @@ _.extend(View.prototype, {
 
 		if (view.template)
 			view.loadTemplate(view.template);
-		
-		if (view.setup)
-			view.setup();
-	},
-
-	stopListening: function()
-	{
-		_.invoke(this._listeningTo, 'call');
-
-		return this;
-	},
-
-	listenTo: function(obj, name, callback)
-	{
-	var
-		listeningTo = this._listeningTo || (this._listeningTo = []),
-		fn = callback.bind(this)
-	;
-		obj.on(name, fn);
-		listeningTo.push(obj.off.bind(obj, name, fn));
-
-		return this;
 	},
 
 	unbind: function()
@@ -194,14 +211,19 @@ _.extend(View.prototype, {
 		this.stopListening();
 	},
 
-	loadTemplate: function(template)
+	loadTemplate: function(tpl)
 	{
-		var tpl = this.template = cxl.compile(template, this);
-
+		tpl = tpl || this.template;
+		
+	var
+		el = typeof(tpl)==='string' ?
+			cxl.compile(tpl, this).el :
+			tpl(this)
+	;
 		if (!this.el)
-			this.setElement(tpl.el);
+			this.setElement(el);
 		else
-			this.$el.html(tpl.el);
+			this.$el.html(el);
 	},
 
 	remove: function()
@@ -277,6 +299,8 @@ var cxl = window.cxl = new Module({
 	Route: Route,
 	View: View,
 	Emitter: Emitter,
+	Listener: Listener,
+	Events: Events,
 	
 	/**
 	 * getElementById wrapper
