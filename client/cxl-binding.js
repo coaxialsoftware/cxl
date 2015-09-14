@@ -121,10 +121,11 @@ _.extend(cxl.TemplateCompiler.prototype, {
 	shortcuts: {
 		'#': 'local',
 		'.': 'class',
-		'@': 'attribute'
+		'@': 'attribute',
+		'$': 'id'
 	},
 
-	bindRegex: /(?:([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?(?:(::?)([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?)?)+/,
+	bindRegex: /(?:([#\.@\&\$]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?(?:(::?)([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?)?)+/,
 
 	registerShortcut: function(key, directive)
 	{
@@ -276,6 +277,10 @@ cxl.directive('attribute', {
 cxl.directive('local', function(el, param, scope) {
 	var fn = _.get(scope, param);
 	return fn.call(scope, el, param, scope);
+});
+	
+cxl.directive('id', function(el, param, scope) {
+	_.set(scope, param, el);
 });
 
 function resultDirective(fn)
