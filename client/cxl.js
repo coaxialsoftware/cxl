@@ -205,8 +205,8 @@ _.extend(View.prototype, Listener, {
 
 	unbind: function()
 	{
-		if (this.template)
-			this.template.destroy();
+		if (this.__template && this.__template.destroy)
+			this.__template.destroy();
 
 		this.stopListening();
 	},
@@ -216,10 +216,13 @@ _.extend(View.prototype, Listener, {
 		tpl = tpl || this.template;
 		
 	var
-		el = typeof(tpl)==='string' ?
-			cxl.compile(tpl, this).el :
-			tpl(this)
+		el = (typeof(tpl)==='string' ?
+			cxl.compile(tpl, this) :
+			tpl(this)).valueOf()
 	;
+		// Store compiled template
+		this.__template = el;
+		
 		if (!this.el)
 			this.setElement(el);
 		else

@@ -1,5 +1,9 @@
 
 (function(cxl, _, $) {
+	
+var
+	templates={}
+;
 
 /**
  * Two way Binding.
@@ -97,6 +101,7 @@ _.extend(cxl.CompiledTemplate.prototype, {
 		this.scope = this.el = this.bindings = null;
 	},
 	
+	// TODO see if this is dangerous
 	valueOf: function()
 	{
 		return this.el;
@@ -237,6 +242,17 @@ cxl.binding = function(op) { return new cxl.Binding(op); };
 cxl.templateCompiler = new cxl.TemplateCompiler();
 cxl.compile = function(el, scope) { return cxl.templateCompiler.compile(el, scope); };
 
+cxl.templateId = function(id)
+{
+	return templates[id] || (templates[id]=cxl.template(cxl.id(id).innerHTML));
+};
+	
+/** Returns an underscore template function */
+cxl._templateId = function(id)
+{
+	return templates[id] || (templates[id]=_.template(cxl.id(id).innerHTML));
+};
+	
 cxl.template = function(str)
 {
 	return function(scope) {
