@@ -4,9 +4,11 @@
 (function(window, $, _, Backbone) {
 "use strict";
 
+var
+	// Link used by cxl.go to convert relative to absolute paths
+	goLink = window.document.createElement('a')
+;
 
-// Link used by cxl.go to convert relative to absolute paths
-var goLink = window.document.createElement('a');
 
 /**
  * Global router. By default it will only support
@@ -82,27 +84,29 @@ var Router = Backbone.Router.extend({
  */
 var Listener = {
 	
-	stopListening: function()
+	__listeners: null,
+	
+	stopListening: function(obj, ev, callback)
 	{
-		_.invoke(this.__listeningTo, 'call');
-
+		_.filter(this.__listeners, {
+			obj: obj, ev: ev, callback: callback
+		}).forEach(function(l) {
+			l.obj.off(l.ev, l.fn);
+		});
+		
 		return this;
 	},
-
-	listenTo: function(obj, name, callback)
+	
+	listenTo: function(obj, ev, callback)
 	{
 	var
-		listeningTo = this.__listeningTo || (this.__listeningTo = []),
+		l = this.__listeners || (this.__listeners=[]),
 		fn = callback.bind(this),
-		on = obj.on || obj.addEventListener,
-		off = obj.off || obj.removeEventListener
+		method = obj.on ? 'on' : 'addEventListener'
 	;
-		if (!on)
-			throw "Object is not listeneable.";
+		obj[method](ev, fn);
+		l.push({ obj: obj, ev: ev, callback: callback, fn: fn });
 		
-		on.call(obj, name, fn);
-		listeningTo.push(off.bind(obj, name, fn));
-
 		return this;
 	}
 	
