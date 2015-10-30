@@ -407,19 +407,17 @@ cxl.directive('html', function(el, arg, scope)
 //
 function markerDirective(el, def)
 {
-	var marker = $(document.createComment('bind'));
+	var marker = def.marker = $(document.createComment('bind'));
 	el.parentNode.insertBefore(marker[0], el);
 
-	def.marker = marker;
-
-	return new cxl.Emmiter(def);
+	return new cxl.Emitter(def);
 }
 
 cxl.directive('if', function(el)
 {
 	return markerDirective(el, {
 		update: function(val) {
-			return val ? this.marker.after(el) : el.detach();
+			return val ? this.marker.after(el) : this.$el.detach();
 		}
 	});
 });
@@ -427,7 +425,7 @@ cxl.directive('if', function(el)
 cxl.directive('unless', function(el) {
 	return markerDirective(el, {
 		update: function(val) {
-			return val ? el.detach() : this.marker.after(el);
+			return val ? this.$el.detach() : this.marker.after(el);
 		}
 	});
 });
