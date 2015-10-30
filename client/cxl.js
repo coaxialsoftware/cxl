@@ -119,14 +119,14 @@ function Emitter(options)
 	_.extend(this, options);
 	
 	if (this.initialize)
-		this.initialize();
+		window.setTimeout(this.initialize.bind(this));
 }
 	
 Emitter.extend = Backbone.View.extend;
 
 _.extend(Emitter.prototype, Events, {
 	
-	value: null,
+	value: NaN,
 	update: null,
 	error: null,
 	

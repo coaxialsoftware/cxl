@@ -52,13 +52,7 @@ _.extend(cxl.Binding.prototype, {
 
 	onRef: function(dest, ref)
 	{
-		var val = ref.val();
-
-		if (this.value !== val)
-		{
-			this.value = val;
-			dest.set(val, this.onComplete);
-		}
+		dest.set(ref.val(), this.onComplete);
 	},
 
 	// Binded handler
@@ -68,7 +62,7 @@ _.extend(cxl.Binding.prototype, {
 	{
 		if (err)
 		{
-			if (this.refA.trigger)
+			if (this.refA && this.refA.trigger)
 				this.refA.trigger('error', err);
 			if (this.refB && this.refB.trigger)
 				this.refB.trigger('error', err);
@@ -133,7 +127,7 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		'$': 'id'
 	},
 
-	bindRegex: /(?:([#\.@\&\$]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?(?:(::?)([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?)?)+/,
+	bindRegex: /(?:\s*([#\.@\&\$]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?(?:(::?)([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?)?)/g,
 
 	registerShortcut: function(key, directive)
 	{
@@ -212,13 +206,8 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		el.removeAttribute('&');
 
 		this.bindRegex.lastIndex = 0;
-		parsed = this.bindRegex.exec(prop);
-
-		while (parsed.length)
-		{
+		while ((parsed = this.bindRegex.exec(prop)))
 			this.bindElement(el, parsed, result);
-			parsed.splice(0, 8);
-		}
 	},
 
 	compile: function(el, scope)
@@ -301,9 +290,8 @@ cxl.directive('id', function(el, param, scope) {
 function resultDirective(fn)
 {
 	return new cxl.Emitter({
-		on: function()
+		initialize: function()
 		{
-			cxl.Emitter.prototype.on.apply(this, arguments);
 			this.set(fn());
 		}
 	});
@@ -409,6 +397,10 @@ function markerDirective(el, def)
 {
 	var marker = def.marker = $(document.createComment('bind'));
 	el.parentNode.insertBefore(marker[0], el);
+	def.el = el;
+	def.detach = function() {
+		this.el.parentNode.removeChild(this.el);
+	};
 
 	return new cxl.Emitter(def);
 }
@@ -417,7 +409,8 @@ cxl.directive('if', function(el)
 {
 	return markerDirective(el, {
 		update: function(val) {
-			return val ? this.marker.after(el) : this.$el.detach();
+			window.console.log(val);
+			return val ? this.marker.after(el) : this.detach();
 		}
 	});
 });
@@ -425,7 +418,7 @@ cxl.directive('if', function(el)
 cxl.directive('unless', function(el) {
 	return markerDirective(el, {
 		update: function(val) {
-			return val ? this.$el.detach() : this.marker.after(el);
+			return val ? this.detach() : this.marker.after(el);
 		}
 	});
 });

@@ -80,7 +80,7 @@ var
 	b = cxl.binding({ refA: el, refB: fb, eventB: 'child_added' })
 ;
 	a.ok(b);
-	a.equal(el.value, null);
+	a.ok(!el.value);
 });
 
 QUnit.test('cxl.Binding server validation error', function(a) {
@@ -151,15 +151,18 @@ QUnit.test('cxl.TemplateCompiler - attribute directive', function(a) {
 });
 
 QUnit.test('cxl.TemplateCompiler - class directive', function(a) {
-	var tpl;
+	var tpl, done=a.async();
 	var div = $('<div><div &=".' + a.test.testId + ':const(bool)"></div></div>');
 
 	tpl = cxl.compile(div[0], { bool: true });
+	
+	tpl.bindings[0].refA.once('value', function() {
+		a.ok(tpl);
+		a.ok(div.children().hasClass(a.test.testId));
 
-	a.ok(tpl);
-	a.ok(div.children().hasClass(a.test.testId));
-
-	tpl.destroy();
+		tpl.destroy();
+		done();
+	});
 });
 
 QUnit.test('cxl.TemplateCompiler - local directive', function(a) {
@@ -182,7 +185,43 @@ QUnit.test('cxl.TemplateCompiler#compile - string', function(a) {
 
 	a.equal(tpl.el.nodeType, 11);
 });
-
+	
+QUnit.test('cxl.TemplateCompiler - if:const directive', function(a) {
+	var tpl, done = a.async();
+	var div = $('<div><div &="if:const(local)"></div></div>');
+	var scope = { local: false, msg: 'Success' };
+	tpl = cxl.compile(div[0], scope);
+	tpl.bindings[0].refA.once('value', function() {
+		a.equal(tpl.el.children.length, 0);
+		tpl.destroy();
+		done();
+	});
+});
+	
+QUnit.test('cxl.TemplateCompiler - if::const directive', function(a) {
+	var tpl, done = a.async();
+	var div = $('<div><div &="if:const(local)"></div></div>');
+	var scope = { local: undefined, msg: 'Success' };
+	tpl = cxl.compile(div[0], scope);
+	tpl.bindings[0].refA.once('value', function() {
+		a.equal(tpl.el.children.length, 0);
+		tpl.destroy();
+		done();
+	});
+});
+	
+QUnit.test('cxl.TemplateCompiler - if::const directive', function(a) {
+	var tpl, done = a.async();
+	var div = $('<div><div &="if:const(local) html:const(msg)"></div></div>');
+	var scope = { local: true, msg: 'Success' };
+	tpl = cxl.compile(div[0], scope);
+	tpl.bindings[1].refA.once('value', function() {
+		a.equal(tpl.el.children.length, 1);
+		a.equal(tpl.el.children[0].innerHTML, scope.msg);
+		tpl.destroy();
+		done();
+	});
+});
 
 /*
 QUnit.test('cxl.TemplateCompiler#compile', function(a) {
@@ -215,20 +254,7 @@ var
 	});
 });
 
-QUnit.test('cxl.Template - if', function(a) {
-var
-	done = a.async(),
-	el = $('<div><span &="if:cxl-binding/falsy"></span></div>'),
-	span = el.find('span'),
-	tpl = cxl.compile(el, fb)
-;
-	span.on('sync', function() {
-		a.equal(el.find('span').length, 0);
-		tpl.unbind();
-		done();
-	});
 
-});
 */
 
 
