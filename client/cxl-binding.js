@@ -409,7 +409,6 @@ cxl.directive('if', function(el)
 {
 	return markerDirective(el, {
 		update: function(val) {
-			window.console.log(val);
 			return val ? this.marker.after(el) : this.detach();
 		}
 	});
