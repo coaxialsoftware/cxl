@@ -124,10 +124,11 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		'#': 'local',
 		'.': 'class',
 		'@': 'attribute',
-		'$': 'id'
+		'$': 'id',
+		'=': 'const'
 	},
 
-	bindRegex: /(?:\s*([#\.@\&\$]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?(?:(::?)([#\.@\&]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?)?)/g,
+	bindRegex: /(?:\s*([#\.@\&\$=]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?(?:(::?)([#\.@\&=]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?)?)/g,
 
 	registerShortcut: function(key, directive)
 	{
@@ -438,8 +439,8 @@ function domEventDirective(el, event, scope, param, prevent)
 
 				if (fn)
 					fn.call(scope, ev);
-				else
-					this.set(ev);
+				
+				this.set(ev);
 			});
 		}
 	});
