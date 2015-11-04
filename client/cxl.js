@@ -209,15 +209,22 @@ _.extend(View.prototype, Listener, {
 
 	unbind: function()
 	{
+		this.destroyTemplate();
+		this.stopListening();
+	},
+	
+	destroyTemplate: function()
+	{
 		if (this.__template && this.__template.destroy)
 			this.__template.destroy();
-
-		this.stopListening();
 	},
 
 	loadTemplate: function(tpl)
 	{
 		tpl = tpl || this.template;
+		
+		if (this.__template)
+			this.destroyTemplate();
 		
 	var
 		el = (typeof(tpl)==='string' ?
