@@ -75,13 +75,17 @@ _.extend(cxl.Binding.prototype, {
 cxl.CompiledTemplate = function(el, scope)
 {
 	this.bindings = [];
+	this.__digest = [];
 	this.el = el;
 	this.scope = scope;
+	this.digest = _.debounce(this.__doDigest.bind(this), 0);
 };
 
 _.extend(cxl.CompiledTemplate.prototype, {
 
 	bindings: null,
+	__digest: null,
+	digest: null,
 
 	// Compiled DOM element
 	el: null,
@@ -99,6 +103,16 @@ _.extend(cxl.CompiledTemplate.prototype, {
 	valueOf: function()
 	{
 		return this.el;
+	},
+	
+	__doDigest: function()
+	{
+	var
+		digest = this.__digest,
+		l = digest.length
+	;
+		while (l--)
+			digest[l]();
 	}
 
 });
@@ -125,9 +139,9 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		'.': 'class',
 		'@': 'attribute',
 		'$': 'id',
-		'=': 'const'
+		'=': 'expr'
 	},
-
+	
 	bindRegex: /(?:\s*([#\.@\&\$=]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?(?:(::?)([#\.@\&=]?)([^\(:\s>"'=]+)(?:\(([^\)]+)\))?)?)/g,
 
 	registerShortcut: function(key, directive)
@@ -162,11 +176,12 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		return frag;
 	},
 
-	getRef: function(shortcut, name, param, el, scope)
+	getRef: function(shortcut, name, param, el, tpl)
 	{
 	var
+		scope = tpl.scope,
 		directive = this.shortcuts[shortcut],
-		ref
+		ref, result
 	;
 		if (directive)
 			param = name;
@@ -178,19 +193,24 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		if (!ref)
 			throw new Error('Directive ' + directive + ' not found.');
 
-		return ref(el, param, scope);
+		result = ref(el, param, scope);
+		
+		if (result && result.digest)
+			tpl.__digest.push(result.digest.bind(result));
+		
+		return result;
 	},
 
 	bindElement: function(el, b, result)
 	{
 	var
-		refA = this.getRef(b[1], b[2], b[3], el, result.scope),
+		refA = this.getRef(b[1], b[2], b[3], el, result),
 		once = b[4]==='::',
 		refB
 	;
 		if (b[4])
 		{
-			refB = this.getRef(b[5], b[6], b[7], el, result.scope);
+			refB = this.getRef(b[5], b[6], b[7], el, result);
 			result.bindings.push(new cxl.Binding({
 				refA: refA, refB: refB, once: once
 			}));
@@ -222,7 +242,9 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		//TODO optimize
 		while ((match = el.querySelector('[\\&]')))
 			this.parseBinding(result, match);
-
+		
+		result.digest();
+		
 		return result;
 	}
 
@@ -297,9 +319,24 @@ function resultDirective(fn)
 		}
 	});
 }
+	
+cxl.directive('expr', function(el, param, scope) {
+	
+	/* jshint evil:true */
+	var fn = new Function('scope', 'with(scope) { return (' + param + '); }');
+	
+	return new cxl.Emitter({
+		digest: function() {
+			this.set(fn(scope));
+		}
+	});
+	
+});
 
 cxl.directive('const', function(el, param, scope) {
-	return resultDirective(_.constant(_.result(scope, param)));
+	var obj = _.result(scope, param);
+	
+	return obj instanceof cxl.Emitter ? obj : resultDirective(_.constant(_.result(scope, param)));
 });
 
 cxl.directive('result', function(el, param, scope)

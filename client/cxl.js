@@ -218,6 +218,12 @@ _.extend(View.prototype, Listener, {
 		if (this.__template && this.__template.destroy)
 			this.__template.destroy();
 	},
+	
+	digest: function()
+	{
+		if (this.__template && this.__template.digest)
+			this.__template.digest();
+	},
 
 	loadTemplate: function(tpl)
 	{
@@ -225,7 +231,6 @@ _.extend(View.prototype, Listener, {
 		
 		if (this.__template)
 			this.destroyTemplate();
-		
 	var
 		el = (typeof(tpl)==='string' ?
 			cxl.compile(tpl, this) :
