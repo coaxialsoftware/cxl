@@ -257,11 +257,11 @@ cxl.Module = cxl.define(class Module {
 		}
 	;
 		if (result && result.then)
-			result.then(cb);
+			result = result.then(cb);
 		else
 			cb();
 		
-		return this;
+		return result;
 	}
 
 	createServer()

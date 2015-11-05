@@ -437,7 +437,8 @@ function markerDirective(el, def)
 	el.parentNode.insertBefore(marker[0], el);
 	def.el = el;
 	def.detach = function() {
-		this.el.parentNode.removeChild(this.el);
+		if (this.el.parentNode)
+			this.el.parentNode.removeChild(this.el);
 	};
 
 	return new cxl.Emitter(def);
@@ -472,7 +473,10 @@ function domEventDirective(el, event, scope, param, prevent)
 		{
 			this.listenTo(el, event, function(ev) {
 				if (prevent)
+				{
 					ev.preventDefault();
+					ev.stopPropagation();
+				}
 
 				if (fn)
 					fn.call(scope, ev);
