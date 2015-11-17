@@ -232,13 +232,11 @@ _.extend(View.prototype, Listener, {
 		if (this.__template)
 			this.destroyTemplate();
 	var
-		el = (typeof(tpl)==='string' ?
+		compiled = this.__template = typeof(tpl)==='string' ?
 			cxl.compile(tpl, this) :
-			tpl(this)).valueOf()
+			tpl(this),
+		el = compiled.valueOf()
 	;
-		// Store compiled template
-		this.__template = el;
-		
 		if (!this.el)
 			this.setElement(el);
 		else

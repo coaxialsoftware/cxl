@@ -243,7 +243,7 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		while ((match = el.querySelector('[\\&]')))
 			this.parseBinding(result, match);
 		
-		result.digest();
+		result.__doDigest();
 		
 		return result;
 	}
@@ -323,7 +323,8 @@ function resultDirective(fn)
 cxl.directive('expr', function(el, param, scope) {
 	
 	/* jshint evil:true */
-	var fn = new Function('scope', 'with(scope) { return (' + param + '); }');
+	var fn = new Function('scope',
+		'try { with(scope) { return (' + param + '); }} catch(e) { cxl.log(e); return; }');
 	
 	return new cxl.Emitter({
 		digest: function() {
