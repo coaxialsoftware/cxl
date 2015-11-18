@@ -120,6 +120,8 @@ function Emitter(options)
 	
 	if (this.initialize)
 		window.setTimeout(this.initialize.bind(this));
+	
+	this.listenTo(cxl, 'digest', this.onDigest);
 }
 	
 Emitter.extend = Backbone.View.extend;
@@ -129,6 +131,13 @@ _.extend(Emitter.prototype, Events, {
 	value: NaN,
 	update: null,
 	error: null,
+	digest: null,
+	
+	onDigest: function()
+	{
+		if (this.digest)
+			this.digest();
+	},
 	
 	val: function()
 	{
@@ -156,6 +165,7 @@ _.extend(Emitter.prototype, Events, {
 	unbind: function()
 	{
 		this.off();
+		this.stopListening();
 	}
 
 });
@@ -318,6 +328,7 @@ var cxl = window.cxl = new Module({
 	Emitter: Emitter,
 	Listener: Listener,
 	Events: Events,
+	Model: Backbone.Model,
 	
 	/**
 	 * getElementById wrapper
@@ -440,8 +451,7 @@ var cxl = window.cxl = new Module({
 	}
 
 });
-
-cxl.Model = Backbone.Model;
-cxl.Events = Backbone.Events;
+	
+_.extend(cxl, Events);
 
 })(this, this.jQuery, this._, this.Backbone);

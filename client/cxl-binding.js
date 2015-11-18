@@ -54,6 +54,19 @@ _.extend(cxl.Binding.prototype, {
 	{
 		dest.set(ref.val(), this.onComplete);
 	},
+	
+	triggerDigest: _.debounce(function() {
+		cxl.trigger('digest');
+	}),
+	
+	// TODO refactor.
+	digest: function()
+	{
+		if (this.refA.digest)
+			this.refA.digest();
+		if (this.refB.digest)
+			this.refB.digest();
+	},
 
 	// Binded handler
 	onComplete: null,
@@ -67,6 +80,8 @@ _.extend(cxl.Binding.prototype, {
 			if (this.refB && this.refB.trigger)
 				this.refB.trigger('error', err);
 		}
+		
+		this.triggerDigest();
 	}
 
 });
@@ -78,14 +93,11 @@ cxl.CompiledTemplate = function(el, scope)
 	this.__digest = [];
 	this.el = el;
 	this.scope = scope;
-	this.digest = _.debounce(this.__doDigest.bind(this), 0);
 };
 
 _.extend(cxl.CompiledTemplate.prototype, {
 
 	bindings: null,
-	__digest: null,
-	digest: null,
 
 	// Compiled DOM element
 	el: null,
@@ -99,20 +111,15 @@ _.extend(cxl.CompiledTemplate.prototype, {
 		this.scope = this.el = this.bindings = null;
 	},
 	
+	digest: function()
+	{
+		_.invoke(this.bindings, 'digest');
+	},
+	
 	// TODO see if this is dangerous
 	valueOf: function()
 	{
 		return this.el;
-	},
-	
-	__doDigest: function()
-	{
-	var
-		digest = this.__digest,
-		l = digest.length
-	;
-		while (l--)
-			digest[l]();
 	}
 
 });
@@ -195,9 +202,6 @@ _.extend(cxl.TemplateCompiler.prototype, {
 
 		result = ref(el, param, scope);
 		
-		if (result && result.digest)
-			tpl.__digest.push(result.digest.bind(result));
-		
 		return result;
 	},
 
@@ -243,7 +247,7 @@ _.extend(cxl.TemplateCompiler.prototype, {
 		while ((match = el.querySelector('[\\&]')))
 			this.parseBinding(result, match);
 		
-		result.__doDigest();
+		result.digest();
 		
 		return result;
 	}
