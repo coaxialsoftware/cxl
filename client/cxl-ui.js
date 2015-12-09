@@ -115,7 +115,7 @@ cxl.Field = cxl.View.extend({
 });
 
 cxl.ui = { };
-
+	
 cxl.ui.ListItem = cxl.View;
 
 cxl.ui.List = cxl.View.extend({
@@ -140,25 +140,24 @@ cxl.ui.List = cxl.View.extend({
 		}
 
 		this.items = {};
-
-		if (this.ref)
-			this.set(this.ref);
 	},
+	
+	on: cxl.Emitter.prototype.on,
+	off: cxl.Emitter.prototype.off,
+	once: cxl.Emitter.prototype.once,
 
 	set: function(ref)
 	{
-		ref.on('child_added', this.onAdd, this);
-		ref.on('child_removed', this.onRemove, this);
-		ref.on('child_moved', this.onMove, this);
+		this.listenTo(ref, 'child_added', this.onAdd);
+		this.listenTo(ref, 'child_removed', this.onRemove);
+		this.listenTo(ref, 'child_moved', this.onMove);
 	},
 
 	unbind: function()
 	{
 		_.invoke(this.items, 'unbind');
 		this.off();
-		this.ref.off('child_added');
-		this.ref.off('child_removed');
-		this.ref.off('child_moved');
+		cxl.View.prototype.unbind.call(this);
 	},
 
 	onAdd: function(snap)
@@ -193,33 +192,38 @@ cxl.ui.List = cxl.View.extend({
 	}
 
 });
+	
+cxl.directive('ui.input', function(el) {
+	
+	return new cxl.Emitter({
+		initialize: function() {
+			this.listenTo(el, 'change', function() {
+				this.set(el.value);
+			});
+		},
+		update: function(val) {
+			el.value = val;
+		}
+	});
 
-
-cxl.directive('ui.input', {
-	load: function(el) {
-		this.listenTo(el, 'change', function() {
-			this.set(el.val());
-		});
-	},
-	update: function(val, el) {
-		el.val(val);
-	}
 });
 
-cxl.directive('ui.switch', {
-	load: function(el)
-	{
-		this.listenTo(el, 'click', function(ev) {
-			this.set(el.prop('checked'));
-			ev.stopPropagation();
-		});
-	},
-	update: function(val, el)
-	{
-		el.prop('checked', val);
-	}
+cxl.directive('ui.switch', function(el) {
+	
+	return new cxl.Emitter({
+		initialize: function() {
+			this.listenTo(el, 'click', function(ev) {
+				this.set(el.checked);
+				ev.stopPropagation();
+			});
+		},
+		
+		update: function(val) {
+			el.checked = val;
+		}
+	});
+	
 });
-
 
 cxl.directive('ui.list', cxl.ui.List);
 

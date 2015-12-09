@@ -39,6 +39,11 @@ _.extend(cxl.Binding.prototype, {
 	{
 		this.refA.off('value', this.onRefA, this);
 		this.refB.off('value', this.onRefB, this);
+		if (this.refA.unbind)
+			this.refA.unbind();
+		if (this.refB.unbind)
+			this.refB.unbind();
+		
 		this.refA = this.refB = null;
 	},
 
@@ -284,7 +289,20 @@ cxl.directive('class', {
 });
 
 cxl.directive('toggleClass', {
-	set: function() { this.el.classList.toggle(this.parameters); }
+	set: function() {
+	var
+		param = this.parameters,
+		p = param.split(' '),
+		el = this.el
+	;
+		if (p.length>1)
+		{
+			el = document.querySelector(p[0]);
+			param = p[1];
+		}
+		
+		el.classList.toggle(param);
+	}
 });
 
 //

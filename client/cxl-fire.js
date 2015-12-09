@@ -20,13 +20,13 @@ cxl.directive('refval', function(el, param, scope) {
 	return param ? ref.child(param) : ref;
 });
 
-cxl.directive('ref', {
-	on: function()
-	{
-		cxl.View.prototype.on.apply(this, arguments);
-		var ref = this.parent.ref || findRef(this.parent);
-		this.set(this.parameters ? ref.child(this.parameters) : ref);
-	}
+cxl.directive('ref', function(el, param, scope) {
+	return new cxl.Emitter({
+		initialize: function() {
+			var ref = scope.ref || findRef(scope);
+			this.set(param ? ref.child(param) : ref);
+		}
+	});
 });
 
 cxl.directive('refkey', {

@@ -397,6 +397,9 @@ var cxl = window.cxl = new Module({
 	 */
 	path: function(path)
 	{
+		if (path[0]!=='/')
+			path = window.location.hash.substr(1) + '/' + path;
+		
 		goLink.setAttribute('href', path);
 		path = goLink.pathname;
 
@@ -408,9 +411,7 @@ var cxl = window.cxl = new Module({
 	 */
 	go: function(path)
 	{
-		window.location.hash = this.path((path.charAt(0)!=='/' ?
-			window.location.hash.substr(1) + '/' : '') + path);
-		
+		window.location.hash = this.path(path);
 		return this;
 	},
 
