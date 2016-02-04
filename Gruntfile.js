@@ -44,7 +44,7 @@ module.exports = function(grunt) {
 					'dist/<%=client.name%>.js': [
 						// Custom build of jquery
 						'lib/jquery.js',
-						'node_modules/lodash/index.js',
+						'node_modules/lodash/lodash.js',
 						'node_modules/backbone/backbone.js',
 						'<%=src.client%>'
 					],
